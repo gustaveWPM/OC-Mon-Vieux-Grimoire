@@ -1,13 +1,19 @@
 import 'dotenv/config';
-import express, { Express, Request, Response } from 'express';
+import tryGetApp from './app/App';
+import ServerConfig from './config/ServerConfig';
 
-const app: Express = express();
-const port = '8000';
+const { PORT } = ServerConfig;
 
-app.get('/', (req: Request, res: Response) => {
-  res.send('Express + TypeScript Server');
-});
+async function serverLauncher() {
+  try {
+    const app = await tryGetApp();
 
-app.listen(port, () => {
-  console.log(`⚡️[server]: Server is running at http://localhost:${port}`);
-});
+    app.listen(PORT, () => {
+      console.log(`Server is running at http://localhost:${PORT}`);
+    });
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+serverLauncher();
