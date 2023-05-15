@@ -4,7 +4,7 @@ import { validator as YearValidator, message as YearValidatorMsg } from '../lib/
 const RatingValidator = (r: number) => r >= 0 && r <= 5;
 const ratingValidatorMsg = 'La note doit être comprise entre 0 et 5';
 
-interface IRating extends Document {
+export interface IRating extends Document {
   userId: string;
   grade: number;
 }

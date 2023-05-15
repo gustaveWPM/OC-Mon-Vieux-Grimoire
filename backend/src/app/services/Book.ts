@@ -3,7 +3,7 @@ import fs from 'fs';
 import { StatusCodes } from 'http-status-codes';
 import { IExtendedReq } from '../interfaces/IExtendedReq';
 import { validator as YearValidator, message as YearValidatorMsg } from '../lib/YearValidator';
-import Book, { BookDocument } from '../models/Book';
+import Book, { BookDocument, IRating } from '../models/Book';
 
 const IMAGES_FOLDER_NAME: string = 'images';
 const IMAGES_FOLDER_NEEDLE: string = `/${IMAGES_FOLDER_NAME}/`;
@@ -113,14 +113,14 @@ export async function updateBook(req: Request, res: Response, next: NextFunction
 
 export async function deleteBookById(req: Request, res: Response) {
   try {
-    const book: BookDocument | null = await Book.findOne({ _id: req.params.id });
-    if (!book) {
+    const targettedBook: BookDocument | null = await Book.findOne({ _id: req.params.id });
+    if (!targettedBook) {
       return res.status(StatusCodes.BAD_REQUEST).json({ message: 'Erreur inconnue' });
     }
-    if (book.userId !== (req as IExtendedReq).auth.userId) {
+    if (targettedBook.userId !== (req as IExtendedReq).auth.userId) {
       return res.status(StatusCodes.BAD_REQUEST).json({ message: 'Erreur inconnue' });
     }
-    Helpers.unlinkSyncFromImageUrl(book.imageUrl);
+    Helpers.unlinkSyncFromImageUrl(targettedBook.imageUrl);
     await Book.deleteOne({ _id: req.params.id });
     res.status(StatusCodes.OK).json({ message: 'Objet supprimé' });
   } catch (error) {
@@ -138,5 +138,31 @@ export async function getBestBooks(_: Request, res: Response): Promise<void> {
     res.status(StatusCodes.OK).json(booksArray);
   } catch (error) {
     res.status(StatusCodes.BAD_REQUEST).json({ error });
+  }
+}
+
+export async function setBookRate(req: Request, res: Response) {
+  const targettedBook: BookDocument | null = await Book.findOne({ _id: req.params.id });
+  const currentUserId = (req as IExtendedReq).auth.userId;
+  const newRating = { userId: currentUserId, grade: req.body.rating };
+
+  if (!targettedBook) {
+    return res.status(StatusCodes.BAD_REQUEST).json({ message: 'Erreur inconnue' });
+  }
+
+  const containsUserId = targettedBook.ratings.some(({ userId }) => userId === currentUserId);
+  if (containsUserId) {
+    return res.status(StatusCodes.NOT_MODIFIED).json({ message: 'Vous avez déjà attribué une note à ce livre' });
+  }
+
+  targettedBook.ratings.push(newRating as IRating);
+  Helpers.computeAndInjectAverageRating(targettedBook);
+
+  try {
+    await Book.updateOne({ _id: targettedBook._id }, { ...targettedBook.toObject() });
+    await getBookById(req, res);
+  } catch (error) {
+    console.log(error);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error });
   }
 }
