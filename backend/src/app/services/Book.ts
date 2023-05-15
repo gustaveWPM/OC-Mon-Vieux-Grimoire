@@ -59,11 +59,15 @@ export async function createBook(req: Request, res: Response, next: NextFunction
   const bookObj: BookDocument = JSON.parse(req.body.book);
   delete bookObj._id;
 
+  if (!req.file) {
+    return res.status(StatusCodes.BAD_REQUEST).json({ message: "Vous avez essayé d'ajouter un livre sans joindre de fichier" });
+  }
+
   Helpers.castBookYear(bookObj);
   const book = new Book({
     ...bookObj,
     userId: (req as IExtendedReq).auth.userId,
-    imageUrl: `${req.protocol}://${req.get('host')}${IMAGES_FOLDER_NEEDLE}${req.file!.filename}`
+    imageUrl: `${req.protocol}://${req.get('host')}${IMAGES_FOLDER_NEEDLE}${req.file.filename}`
   });
   Helpers.computeAndInjectAverageRating(book);
 
