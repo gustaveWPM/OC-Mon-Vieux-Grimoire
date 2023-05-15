@@ -124,4 +124,15 @@ export async function deleteBookById(req: Request, res: Response) {
   }
 }
 
-export async function getBestRatings() {}
+export async function getBestBooks(_: Request, res: Response): Promise<void> {
+  try {
+    const topBooks: BookDocument[] = await Book.find({ averageRating: { $exists: true } })
+      .sort({ averageRating: -1 })
+      .limit(3);
+
+    const booksArray = topBooks.map((topBook: BookDocument) => topBook.toObject());
+    res.status(StatusCodes.OK).json(booksArray);
+  } catch (error) {
+    res.status(StatusCodes.BAD_REQUEST).json({ error });
+  }
+}
