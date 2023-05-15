@@ -45,18 +45,16 @@ export async function userSignup(req: Request, res: Response): Promise<void> {
   }
 }
 
-export async function userLogin(req: Request, res: Response): Promise<void> {
+export async function userLogin(req: Request, res: Response) {
   try {
     const user = await Incubator.getUserFromEmail(req.body.email);
     if (!user) {
-      Helpers.setRejectedUserResponse(res);
-      return;
+      return Helpers.setRejectedUserResponse(res);
     }
 
     const validPassword = await isValidPassword(req.body.password, user.password);
     if (!validPassword) {
-      Helpers.setRejectedUserResponse(res);
-      return;
+      return Helpers.setRejectedUserResponse(res);
     }
 
     const TOKEN_SECRET = Config.TOKEN_SECRET;

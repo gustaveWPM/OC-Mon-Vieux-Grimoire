@@ -4,7 +4,7 @@ namespace InternalsConfig {
 
 function buildApiServiceRoutePrefixedWithServlet(tail: string): string {
   const SERVLET: string = InternalsConfig.SERVLET;
-  const head: string = SERVLET.charAt(0) !== '/' ? '/' : '' + SERVLET + SERVLET.charAt(SERVLET.length - 1) !== '/' ? '/' : '';
+  const head: string = (SERVLET.charAt(0) !== '/' ? '/' : '') + SERVLET + (SERVLET.charAt(SERVLET.length - 1) !== '/' ? '/' : '');
   return head + tail;
 }
 

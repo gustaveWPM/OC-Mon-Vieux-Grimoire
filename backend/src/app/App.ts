@@ -1,13 +1,15 @@
+import bodyParser from 'body-parser';
 import express, { Express, NextFunction, Request, Response } from 'express';
 import mongoose from 'mongoose';
 import path from 'path';
 import ApiConfig from '../config/ApiConfig';
 import AtlasConfig from '../config/AtlasConfig';
+import booksController from './controllers/Book';
 import usersController from './controllers/User';
 
 async function tryToConnectToMongoDB() {
-  const { USERNAME, PASSWORD, CLUSTER_URI } = AtlasConfig;
-  const URI = `mongodb+srv://${USERNAME}:${PASSWORD}@${CLUSTER_URI}/test?retryWrites=true&w=majority`;
+  const { USERNAME, PASSWORD, CLUSTER_URI, DB_NAME } = AtlasConfig;
+  const URI = `mongodb+srv://${USERNAME}:${PASSWORD}@${CLUSTER_URI}/${DB_NAME}?retryWrites=true&w=majority`;
 
   return mongoose
     .connect(URI)
@@ -21,23 +23,25 @@ async function tryToConnectToMongoDB() {
 function pluginControllers(app: Express) {
   const { AUTH_API_ROUTE, BOOKS_API_ROUTE } = ApiConfig;
   app.use(AUTH_API_ROUTE, usersController);
-  // app.use(BOOKS_API_ROUTE, booksController);
+  app.use(BOOKS_API_ROUTE, booksController);
 }
 
 function appBinder(app: Express) {
-  const setCorsHeader = () => {
+  function setCorsHeader() {
     app.use((req: Request, res: Response, next: NextFunction) => {
       res.setHeader('Access-Control-Allow-Origin', '*');
       res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content, Accept, Content-Type, Authorization');
       res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
       next();
     });
-  };
-  const useBodyParser = () => app.use(express.json());
-  const setStaticRoutes = () => app.use('/images', express.static(path.join(__dirname, 'images')));
+  }
+  const useBodyParserJSON = () => app.use(bodyParser.json());
+  const useBodyParserURLEncoded = () => app.use(bodyParser.urlencoded({ extended: true }));
+  const setStaticRoutes = () => app.use('/images', express.static(path.join(__dirname, '../../images')));
 
   setCorsHeader();
-  useBodyParser();
+  useBodyParserJSON();
+  useBodyParserURLEncoded();
   setStaticRoutes();
   pluginControllers(app);
 }
