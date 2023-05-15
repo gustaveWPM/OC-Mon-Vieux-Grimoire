@@ -16,12 +16,12 @@ const storage = multer.diskStorage({
   destination: (req: Request, file: Express.Multer.File, callback: (error: Error | null, destination: string) => void) => {
     let error = null;
     if (!multiformValidation(req, file)) {
-      error = new Error('Le formulaire est incorrect.');
+      error = new Error('Le contenu du formulaire est incorrect.');
     }
     callback(error, 'images');
   },
 
-  filename: (req: Request, file: Express.Multer.File, callback: (error: Error | null, filename: string) => void) => {
+  filename: (_: Request, file: Express.Multer.File, callback: (error: Error | null, filename: string) => void) => {
     const extension = mime.extension(file.mimetype);
     const timestamp = Date.now();
     const uniqueId = uuidv4();
@@ -32,7 +32,7 @@ const storage = multer.diskStorage({
   }
 });
 
-function fileFilter(req: Request, file: Express.Multer.File, callback: FileFilterCallback) {
+function fileFilter(_: Request, file: Express.Multer.File, callback: FileFilterCallback) {
   if (file.mimetype.startsWith('image/')) {
     callback(null, true);
   } else {

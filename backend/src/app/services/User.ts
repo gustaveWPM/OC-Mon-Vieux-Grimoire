@@ -18,7 +18,8 @@ namespace Helpers {
 }
 
 namespace Incubator {
-  export async function getUserFromEmail(email: string): Promise<UserDocument | undefined> {
+  export async function getUserFromEmail(inputEmail: string): Promise<UserDocument | undefined> {
+    const email = inputEmail.toLowerCase().trim();
     const user = await User.findOne({ email });
     if (!user) {
       return undefined;
@@ -34,8 +35,9 @@ export async function userSignup(req: Request, res: Response): Promise<void> {
       throw new Error(Config.FAILED_TO_HASH_PASSWORD_ERROR);
     }
 
+    const email = req.body.email.toLowerCase().trim();
     const user = new User({
-      email: req.body.email,
+      email,
       password
     });
     await user.save();

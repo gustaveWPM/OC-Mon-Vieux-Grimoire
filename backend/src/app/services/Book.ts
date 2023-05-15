@@ -1,7 +1,11 @@
 import { NextFunction, Request, Response } from 'express';
+import fs from 'fs';
 import { StatusCodes } from 'http-status-codes';
 import { IExtendedReq } from '../interfaces/IExtendedReq';
 import Book, { BookDocument } from '../models/Book';
+
+const IMAGES_FOLDER_NAME: string = 'images';
+const IMAGES_FOLDER_NEEDLE: string = `/${IMAGES_FOLDER_NAME}/`;
 
 namespace Helpers {
   export function castBookYear(bookObj: BookDocument) {
@@ -24,7 +28,7 @@ namespace Helpers {
   }
 }
 
-export async function getBooks(req: Request, res: Response): Promise<void> {
+export async function getBooks(_: Request, res: Response): Promise<void> {
   try {
     const books: BookDocument[] = await Book.find();
     const booksArray = books.map((book: BookDocument) => book.toObject());
@@ -40,7 +44,7 @@ export async function getBookById(req: Request, res: Response): Promise<void> {
     if (book) {
       res.status(StatusCodes.OK).json(book);
     } else {
-      res.status(StatusCodes.NOT_FOUND).json({ error: 'Book not found' });
+      res.status(StatusCodes.NOT_FOUND).json({ error: 'Not found' });
     }
   } catch (error) {
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error });
@@ -49,15 +53,12 @@ export async function getBookById(req: Request, res: Response): Promise<void> {
 
 export async function createBook(req: Request, res: Response, next: NextFunction) {
   const bookObj: BookDocument = JSON.parse(req.body.book);
-  if (!req.file) {
-    return res.status(StatusCodes.BAD_REQUEST).json({ message: 'Requête de création de livre sans fichier joint' });
-  }
   delete bookObj._id;
   Helpers.castBookYear(bookObj);
   const book = new Book({
     ...bookObj,
     userId: (req as IExtendedReq).auth.userId,
-    imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
+    imageUrl: `${req.protocol}://${req.get('host')}${IMAGES_FOLDER_NEEDLE}${req.file!.filename}`
   });
   Helpers.computeAndInjectAverageRating(book);
 
@@ -67,5 +68,23 @@ export async function createBook(req: Request, res: Response, next: NextFunction
     next();
   } catch (error) {
     res.status(StatusCodes.BAD_REQUEST).json({ error });
+  }
+}
+
+export async function deleteBookById(req: Request, res: Response) {
+  try {
+    const book: BookDocument | null = await Book.findOne({ _id: req.params.id });
+    if (!book) {
+      return res.status(StatusCodes.BAD_REQUEST).json({ message: 'Erreur inconnue' });
+    }
+    if (book.userId !== (req as IExtendedReq).auth.userId) {
+      return res.status(StatusCodes.BAD_REQUEST).json({ message: 'Erreur inconnue' });
+    }
+    const filename: string = book.imageUrl.split(IMAGES_FOLDER_NEEDLE)[1];
+    fs.unlinkSync(`${IMAGES_FOLDER_NAME}/${filename}`);
+    await Book.deleteOne({ _id: req.params.id });
+    res.status(StatusCodes.OK).json({ message: 'Objet supprimé' });
+  } catch (error) {
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error });
   }
 }

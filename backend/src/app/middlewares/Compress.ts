@@ -6,7 +6,7 @@ import sharp from 'sharp';
 const QUALITY_RATIO: number = 80;
 const MAX_WIDTH_PX: number = 500;
 
-export async function compressMiddleware(req: Request, res: Response, next: NextFunction) {
+export async function compressMiddleware(req: Request, _: Response, next: NextFunction) {
   const file = req.file!;
   let { filename } = file;
 
