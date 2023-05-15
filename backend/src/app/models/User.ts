@@ -6,11 +6,12 @@ export interface UserDocument extends Document {
   password: string;
 }
 
-const UserSchema: Schema = new Schema({
+const userSchema: Schema = new Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true }
 });
 
-UserSchema.plugin(uniqueValidator);
+userSchema.plugin(uniqueValidator);
+userSchema.index({ email: 'text' });
 
-export default model<UserDocument>('User', UserSchema);
+export default model<UserDocument>('User', userSchema);

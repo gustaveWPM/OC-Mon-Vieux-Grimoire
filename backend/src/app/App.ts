@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 import path from 'path';
 import ApiConfig from '../config/ApiConfig';
 import AtlasConfig from '../config/AtlasConfig';
+import ServerConfig from '../config/ServerConfig';
 import booksController from './controllers/Book';
 import usersController from './controllers/User';
 
@@ -35,9 +36,12 @@ function appBinder(app: Express) {
       next();
     });
   }
+
+  const { IMAGES_FOLDER, IMAGES_FOLDER_RELATIVE_PATH_FROM_APP_CTX } = ServerConfig;
+
   const useBodyParserJSON = () => app.use(bodyParser.json());
   const useBodyParserURLEncoded = () => app.use(bodyParser.urlencoded({ extended: true }));
-  const setStaticRoutes = () => app.use('/images', express.static(path.join(__dirname, '../../images')));
+  const setStaticRoutes = () => app.use(`/${IMAGES_FOLDER}`, express.static(path.join(__dirname, IMAGES_FOLDER_RELATIVE_PATH_FROM_APP_CTX)));
 
   setCorsHeader();
   useBodyParserJSON();

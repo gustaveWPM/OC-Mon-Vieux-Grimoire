@@ -1,9 +1,6 @@
 import mongoose, { Document, Schema } from 'mongoose';
 import { validator as YearValidator, message as YearValidatorMsg } from '../lib/YearValidator';
 
-const RatingValidator = (r: number) => r >= 0 && r <= 5;
-const ratingValidatorMsg = 'La note doit être comprise entre 0 et 5';
-
 export interface IRating extends Document {
   userId: string;
   grade: number;
@@ -17,20 +14,16 @@ export interface BookDocument extends Document {
   genre: string;
   ratings: IRating[];
   averageRating: number;
-  image?: string;
   imageUrl: string;
 }
 
+const MIN_RATE = 0;
+const MAX_RATE = 5;
+const bookRateMongooseSpecs = { type: Number, required: true, min: MIN_RATE, max: MAX_RATE };
+
 const ratingSchema: Schema<IRating> = new mongoose.Schema({
   userId: { type: String, required: true },
-  grade: {
-    type: Number,
-    required: true,
-    validate: {
-      validator: RatingValidator,
-      message: ratingValidatorMsg
-    }
-  }
+  grade: bookRateMongooseSpecs
 });
 
 const bookSchema: Schema<BookDocument> = new mongoose.Schema({
@@ -47,8 +40,7 @@ const bookSchema: Schema<BookDocument> = new mongoose.Schema({
   },
   genre: { type: String, required: true },
   ratings: { type: [ratingSchema], required: true },
-  averageRating: { type: Number, required: true, min: 0, max: 5 },
-  image: { type: String },
+  averageRating: bookRateMongooseSpecs,
   imageUrl: { type: String, required: true }
 });
 

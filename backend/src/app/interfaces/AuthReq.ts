@@ -1,7 +1,9 @@
 import { Request } from 'express';
 
-export interface IExtendedReq extends Request {
+export interface AuthReq extends Request {
   auth: {
     userId: string;
   };
 }
+
+export default AuthReq;

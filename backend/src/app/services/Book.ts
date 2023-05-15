@@ -1,12 +1,14 @@
 import { NextFunction, Request, Response } from 'express';
 import fs from 'fs';
 import { StatusCodes } from 'http-status-codes';
-import { IExtendedReq } from '../interfaces/IExtendedReq';
-import { validator as YearValidator, message as YearValidatorMsg } from '../lib/YearValidator';
+import ServerConfig from '../../config/ServerConfig';
+import AuthReq from '../interfaces/AuthReq';
+import bookStaticFieldsValidator from '../lib/BookStaticFieldsValidator';
+import getSlashEnvelope from '../lib/GetSlashEnvelope';
 import Book, { BookDocument, IRating } from '../models/Book';
 
-const IMAGES_FOLDER_NAME: string = 'images';
-const IMAGES_FOLDER_NEEDLE: string = `/${IMAGES_FOLDER_NAME}/`;
+const { IMAGES_FOLDER } = ServerConfig;
+const IMAGES_FOLDER_NEEDLE: string = getSlashEnvelope(IMAGES_FOLDER);
 
 namespace Helpers {
   export const getFilenameFromImageUrl = (imageUrl: string): string => imageUrl.split(IMAGES_FOLDER_NEEDLE)[1];
@@ -16,7 +18,7 @@ namespace Helpers {
     }
   }
 
-  export const unlinkSyncFromImageUrl = (imageUrl: string) => fs.unlinkSync(`${IMAGES_FOLDER_NAME}/${Helpers.getFilenameFromImageUrl(imageUrl)}`);
+  export const unlinkSyncFromImageUrl = (imageUrl: string) => fs.unlinkSync(`${IMAGES_FOLDER}/${Helpers.getFilenameFromImageUrl(imageUrl)}`);
 
   export function computeAndInjectAverageRating(book: BookDocument) {
     const ratings = book.ratings;
@@ -66,7 +68,7 @@ export async function createBook(req: Request, res: Response, next: NextFunction
   Helpers.castBookYear(bookObj);
   const book = new Book({
     ...bookObj,
-    userId: (req as IExtendedReq).auth.userId,
+    userId: (req as AuthReq).auth.userId,
     imageUrl: `${req.protocol}://${req.get('host')}${IMAGES_FOLDER_NEEDLE}${req.file.filename}`
   });
   Helpers.computeAndInjectAverageRating(book);
@@ -85,19 +87,20 @@ export async function updateBook(req: Request, res: Response, next: NextFunction
   const bookObj = newFile
     ? {
         ...JSON.parse(req.body.book),
-        imageUrl: `${req.protocol}://${req.get('host')}/images/${newFile.filename}`
+        imageUrl: `${req.protocol}://${req.get('host')}${IMAGES_FOLDER_NEEDLE}${newFile.filename}`
       }
     : { ...req.body };
+
+  const bookStaticFieldsValidationError = bookStaticFieldsValidator(bookObj);
+  if (bookStaticFieldsValidationError) {
+    return res.status(StatusCodes.BAD_REQUEST).json({ bookStaticFieldsValidationError });
+  }
 
   delete bookObj.userId;
   try {
     const oldBook = await Book.findOne({ _id: req.params.id });
-    if (!oldBook || oldBook.userId !== (req as IExtendedReq).auth.userId) {
+    if (!oldBook || oldBook.userId !== (req as AuthReq).auth.userId) {
       return res.status(StatusCodes.UNAUTHORIZED).json({ message: 'Unauthorized' });
-    }
-
-    if (!YearValidator(bookObj.year)) {
-      return res.status(StatusCodes.BAD_REQUEST).json({ message: YearValidatorMsg });
     }
 
     Helpers.castBookYear(bookObj);
@@ -113,14 +116,14 @@ export async function updateBook(req: Request, res: Response, next: NextFunction
 
 export async function deleteBookById(req: Request, res: Response) {
   try {
-    const targettedBook: BookDocument | null = await Book.findOne({ _id: req.params.id });
-    if (!targettedBook) {
+    const targetedBook: BookDocument | null = await Book.findOne({ _id: req.params.id });
+    if (!targetedBook) {
       return res.status(StatusCodes.BAD_REQUEST).json({ message: 'Erreur inconnue' });
     }
-    if (targettedBook.userId !== (req as IExtendedReq).auth.userId) {
+    if (targetedBook.userId !== (req as AuthReq).auth.userId) {
       return res.status(StatusCodes.BAD_REQUEST).json({ message: 'Erreur inconnue' });
     }
-    Helpers.unlinkSyncFromImageUrl(targettedBook.imageUrl);
+    Helpers.unlinkSyncFromImageUrl(targetedBook.imageUrl);
     await Book.deleteOne({ _id: req.params.id });
     res.status(StatusCodes.OK).json({ message: 'Objet supprimé' });
   } catch (error) {
@@ -142,27 +145,26 @@ export async function getBestBooks(_: Request, res: Response): Promise<void> {
 }
 
 export async function setBookRate(req: Request, res: Response) {
-  const targettedBook: BookDocument | null = await Book.findOne({ _id: req.params.id });
-  const currentUserId = (req as IExtendedReq).auth.userId;
+  const targetedBook: BookDocument | null = await Book.findOne({ _id: req.params.id });
+  const currentUserId = (req as AuthReq).auth.userId;
   const newRating = { userId: currentUserId, grade: req.body.rating };
 
-  if (!targettedBook) {
+  if (!targetedBook) {
     return res.status(StatusCodes.BAD_REQUEST).json({ message: 'Erreur inconnue' });
   }
 
-  const containsUserId = targettedBook.ratings.some(({ userId }) => userId === currentUserId);
-  if (containsUserId) {
-    return res.status(StatusCodes.NOT_MODIFIED).json({ message: 'Vous avez déjà attribué une note à ce livre' });
+  const ratingsContainCurrentUserId = targetedBook.ratings.some(({ userId }) => userId === currentUserId);
+  if (ratingsContainCurrentUserId) {
+    return res.status(StatusCodes.NOT_MODIFIED).json(targetedBook);
   }
 
-  targettedBook.ratings.push(newRating as IRating);
-  Helpers.computeAndInjectAverageRating(targettedBook);
+  targetedBook.ratings.push(newRating as IRating);
+  Helpers.computeAndInjectAverageRating(targetedBook);
 
   try {
-    await Book.updateOne({ _id: targettedBook._id }, { ...targettedBook.toObject() });
+    await Book.updateOne({ _id: targetedBook._id }, { ...targetedBook.toObject() });
     await getBookById(req, res);
   } catch (error) {
-    console.log(error);
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error });
   }
 }

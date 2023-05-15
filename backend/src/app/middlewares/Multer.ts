@@ -2,23 +2,28 @@ import { Request } from 'express';
 import mime from 'mime-types';
 import multer, { FileFilterCallback } from 'multer';
 import { v4 as uuidv4 } from 'uuid';
-import { validator as YearValidator } from '../lib/YearValidator';
+import ServerConfig from '../../config/ServerConfig';
+import bookStaticFieldsValidator from '../lib/BookStaticFieldsValidator';
 import { BookDocument } from '../models/Book';
 
-function multiformValidation(req: Request, file: Express.Multer.File) {
-  const bookObj: BookDocument = JSON.parse(req.body.book);
-  const isValid = YearValidator(bookObj.year) && file.mimetype;
+function bookStaticFieldsValidation(req: Request, file: Express.Multer.File): Error | null {
+  if (!file || !file.mimetype) {
+    return new Error('Impossible de déterminer le mimetype du fichier lors de la validation du formulaire.');
+  }
 
-  return isValid;
+  const bookObj: BookDocument = JSON.parse(req.body.book);
+  const bookStaticFieldsValidationError = bookStaticFieldsValidator(bookObj);
+  if (bookStaticFieldsValidationError) {
+    return bookStaticFieldsValidationError;
+  }
+  return null;
 }
 
 const storage = multer.diskStorage({
   destination: (req: Request, file: Express.Multer.File, callback: (error: Error | null, destination: string) => void) => {
-    let error = null;
-    if (!multiformValidation(req, file)) {
-      error = new Error('Le contenu du formulaire est incorrect.');
-    }
-    callback(error, 'images');
+    const error: Error | null = bookStaticFieldsValidation(req, file);
+    const { IMAGES_FOLDER } = ServerConfig;
+    callback(error, IMAGES_FOLDER);
   },
 
   filename: (_: Request, file: Express.Multer.File, callback: (error: Error | null, filename: string) => void) => {
@@ -40,5 +45,5 @@ function fileFilter(_: Request, file: Express.Multer.File, callback: FileFilterC
   }
 }
 
-export const formValidatorAndFileUploadMiddleware = multer({ storage, fileFilter }).single('image');
-export default formValidatorAndFileUploadMiddleware;
+export const bookFormMiddleware = multer({ storage, fileFilter }).single('image');
+export default bookFormMiddleware;

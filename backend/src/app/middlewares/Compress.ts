@@ -19,7 +19,7 @@ export async function compressMiddleware(req: Request, _: Response, next: NextFu
 
   await sharp(file.path).resize(MAX_WIDTH_PX).webp({ quality: QUALITY_RATIO }).toFile(path.resolve(file.destination, filename));
   fs.unlinkSync(file.path);
-  req.file!.filename = filename;
+  req.file.filename = filename;
   next();
 }
 

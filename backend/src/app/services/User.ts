@@ -1,3 +1,4 @@
+import { validate as emailValidator } from 'email-validator';
 import { Request, Response } from 'express';
 import StatusCodes from 'http-status-codes';
 import jwt from 'jsonwebtoken';
@@ -15,8 +16,6 @@ namespace Config {
 namespace Helpers {
   export const setRejectedUserResponse = (res: Response): Response =>
     res.status(StatusCodes.UNAUTHORIZED).json({ message: Config.REJECTED_USER_MESSAGE });
-  export const setInternalServerErrorResponse = (res: Response, error: unknown): Response =>
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error });
 
   export function isValidTrimmedAndLowercasedEmail(inputEmail: string, onEdit: boolean = false) {
     if (inputEmail.length > Config.MAX_MAIL_LEN) {
@@ -31,8 +30,7 @@ namespace Helpers {
       }
     }
 
-    const minimalEmailReg = /^[a-z0-9._+-]+@[a-z0-9]+(?:.[a-z0-9]+)*(?:.[a-z]{2,}){1,2}$/;
-    const isValid = minimalEmailReg.test(inputEmail);
+    const isValid = emailValidator(inputEmail);
     return isValid;
   }
 }
@@ -70,7 +68,7 @@ export async function userSignup(req: Request, res: Response): Promise<void> {
     await user.save();
     res.status(StatusCodes.CREATED).json({ message: 'Utilisateur créé' });
   } catch (error) {
-    Helpers.setInternalServerErrorResponse(res, error);
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error });
   }
 }
 
@@ -97,6 +95,6 @@ export async function userLogin(req: Request, res: Response) {
       token
     });
   } catch (error) {
-    Helpers.setInternalServerErrorResponse(res, error);
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error });
   }
 }
