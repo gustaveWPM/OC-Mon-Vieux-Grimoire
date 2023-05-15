@@ -2,17 +2,21 @@ import { NextFunction, Request, Response } from 'express';
 import fs from 'fs';
 import { StatusCodes } from 'http-status-codes';
 import { IExtendedReq } from '../interfaces/IExtendedReq';
+import { validator as YearValidator, message as YearValidatorMsg } from '../lib/YearValidator';
 import Book, { BookDocument } from '../models/Book';
 
 const IMAGES_FOLDER_NAME: string = 'images';
 const IMAGES_FOLDER_NEEDLE: string = `/${IMAGES_FOLDER_NAME}/`;
 
 namespace Helpers {
+  export const getFilenameFromImageUrl = (imageUrl: string): string => imageUrl.split(IMAGES_FOLDER_NEEDLE)[1];
   export function castBookYear(bookObj: BookDocument) {
     if (typeof bookObj.year === 'string') {
       bookObj.year = parseInt(bookObj.year);
     }
   }
+
+  export const unlinkSyncFromImageUrl = (imageUrl: string) => fs.unlinkSync(`${IMAGES_FOLDER_NAME}/${Helpers.getFilenameFromImageUrl(imageUrl)}`);
 
   export function computeAndInjectAverageRating(book: BookDocument) {
     const ratings = book.ratings;
@@ -54,6 +58,7 @@ export async function getBookById(req: Request, res: Response): Promise<void> {
 export async function createBook(req: Request, res: Response, next: NextFunction) {
   const bookObj: BookDocument = JSON.parse(req.body.book);
   delete bookObj._id;
+
   Helpers.castBookYear(bookObj);
   const book = new Book({
     ...bookObj,
@@ -71,6 +76,37 @@ export async function createBook(req: Request, res: Response, next: NextFunction
   }
 }
 
+export async function updateBook(req: Request, res: Response, next: NextFunction) {
+  const newFile = req.file;
+  const bookObj = newFile
+    ? {
+        ...JSON.parse(req.body.book),
+        imageUrl: `${req.protocol}://${req.get('host')}/images/${newFile.filename}`
+      }
+    : { ...req.body };
+
+  delete bookObj.userId;
+  try {
+    const oldBook = await Book.findOne({ _id: req.params.id });
+    if (!oldBook || oldBook.userId !== (req as IExtendedReq).auth.userId) {
+      return res.status(StatusCodes.UNAUTHORIZED).json({ message: 'Unauthorized' });
+    }
+
+    if (!YearValidator(bookObj.year)) {
+      return res.status(StatusCodes.BAD_REQUEST).json({ message: YearValidatorMsg });
+    }
+
+    Helpers.castBookYear(bookObj);
+    await Book.updateOne({ _id: req.params.id }, { ...bookObj, _id: req.params.id });
+    if (newFile) {
+      Helpers.unlinkSyncFromImageUrl(oldBook.imageUrl);
+    }
+    res.status(StatusCodes.OK).json({ message: 'Livre modifié !' });
+  } catch (error) {
+    res.status(StatusCodes.BAD_REQUEST).json({ error });
+  }
+}
+
 export async function deleteBookById(req: Request, res: Response) {
   try {
     const book: BookDocument | null = await Book.findOne({ _id: req.params.id });
@@ -80,11 +116,12 @@ export async function deleteBookById(req: Request, res: Response) {
     if (book.userId !== (req as IExtendedReq).auth.userId) {
       return res.status(StatusCodes.BAD_REQUEST).json({ message: 'Erreur inconnue' });
     }
-    const filename: string = book.imageUrl.split(IMAGES_FOLDER_NEEDLE)[1];
-    fs.unlinkSync(`${IMAGES_FOLDER_NAME}/${filename}`);
+    Helpers.unlinkSyncFromImageUrl(book.imageUrl);
     await Book.deleteOne({ _id: req.params.id });
     res.status(StatusCodes.OK).json({ message: 'Objet supprimé' });
   } catch (error) {
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error });
   }
 }
+
+export async function getBestRatings() {}

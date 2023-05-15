@@ -7,6 +7,10 @@ const QUALITY_RATIO: number = 80;
 const MAX_WIDTH_PX: number = 500;
 
 export async function compressMiddleware(req: Request, _: Response, next: NextFunction) {
+  if (!req.file || !req.file.filename) {
+    next();
+    return;
+  }
   const file = req.file!;
   let { filename } = file;
 
