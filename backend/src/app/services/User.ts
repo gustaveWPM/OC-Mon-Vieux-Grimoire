@@ -8,6 +8,8 @@ namespace Config {
   export const REJECTED_USER_MESSAGE: string = 'Paire identifiant/mot de passe incorrecte';
   export const FAILED_TO_HASH_PASSWORD_ERROR: string = 'Erreur inconnue';
   export const TOKEN_SECRET = process.env.TOKEN_SECRET;
+  export const MAX_MAIL_LEN: number = 40;
+  export const MAIL_BLOCK_LIST: string[] = ['@yopmail.com'];
 }
 
 namespace Helpers {
@@ -15,11 +17,32 @@ namespace Helpers {
     res.status(StatusCodes.UNAUTHORIZED).json({ message: Config.REJECTED_USER_MESSAGE });
   export const setInternalServerErrorResponse = (res: Response, error: unknown): Response =>
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error });
+
+  export function isValidTrimmedAndLowercasedEmail(inputEmail: string, onEdit: boolean = false) {
+    if (inputEmail.length > Config.MAX_MAIL_LEN) {
+      return false;
+    }
+
+    if (onEdit) {
+      for (const blockedNeedle of Config.MAIL_BLOCK_LIST) {
+        if (inputEmail.includes(blockedNeedle)) {
+          return false;
+        }
+      }
+    }
+
+    const minimalEmailReg = /^[a-z0-9._+-]+@[a-z0-9]+(?:.[a-z0-9]+)*(?:.[a-z]{2,}){1,2}$/;
+    const isValid = minimalEmailReg.test(inputEmail);
+    return isValid;
+  }
 }
 
 namespace Incubator {
   export async function getUserFromEmail(inputEmail: string): Promise<UserDocument | undefined> {
     const email = inputEmail.toLowerCase().trim();
+    if (!Helpers.isValidTrimmedAndLowercasedEmail(email)) {
+      return undefined;
+    }
     const user = await User.findOne({ email });
     if (!user) {
       return undefined;
@@ -36,6 +59,10 @@ export async function userSignup(req: Request, res: Response): Promise<void> {
     }
 
     const email = req.body.email.toLowerCase().trim();
+    if (!Helpers.isValidTrimmedAndLowercasedEmail(email, true)) {
+      throw new Error(Config.REJECTED_USER_MESSAGE);
+    }
+
     const user = new User({
       email,
       password
