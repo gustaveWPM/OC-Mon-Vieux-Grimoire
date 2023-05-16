@@ -21,7 +21,13 @@ namespace Helpers {
     }
   }
 
-  export const unlinkSyncFromImageUrl = (imageUrl: string) => fs.unlinkSync(`${IMAGES_FOLDER}/${Helpers.getFilenameFromImageUrl(imageUrl)}`);
+  export const unlinkSyncFromImageUrl = (imageUrl: string) => {
+    try {
+      fs.unlinkSync(`${IMAGES_FOLDER}/${Helpers.getFilenameFromImageUrl(imageUrl)}`);
+    } catch (error) {
+      printError(error);
+    }
+  };
 
   export function computeAndInjectAverageRating(book: BookDocument) {
     const ratings = book.ratings;
@@ -67,7 +73,6 @@ export async function getBookById(req: Request, res: Response): Promise<void> {
 export async function createBook(req: Request, res: Response, next: NextFunction) {
   async function doCreateBook(req: Request, res: Response, next: NextFunction) {
     const bookObj: BookDocument = JSON.parse(req.body.book);
-    delete bookObj._id;
 
     if (!req.file) {
       return res.status(StatusCodes.BAD_REQUEST).json({ message: "Vous avez essayé d'ajouter un livre sans joindre de fichier" });
@@ -82,11 +87,16 @@ export async function createBook(req: Request, res: Response, next: NextFunction
     Helpers.computeAndInjectAverageRating(book);
 
     try {
+      const validationError: Error | null = book.validateSync();
+      if (validationError) {
+        throw validationError;
+      }
       await book.save();
       res.status(StatusCodes.CREATED).json({ message: 'Livre enregistré' });
       next();
     } catch (error) {
       printError(error);
+      Helpers.unlinkSyncFromImageUrl(book.imageUrl);
       res.status(StatusCodes.BAD_REQUEST).json(errorToObj(error));
     }
   }
@@ -117,7 +127,6 @@ export async function updateBook(req: Request, res: Response, next: NextFunction
     return res.status(StatusCodes.BAD_REQUEST).json({ bookStaticFieldsValidationError });
   }
 
-  delete bookObj.userId;
   try {
     const oldBook = await Book.findOne({ _id: req.params.id });
     if (!oldBook || oldBook.userId !== (req as AuthReq).auth.userId) {
@@ -125,7 +134,14 @@ export async function updateBook(req: Request, res: Response, next: NextFunction
     }
 
     Helpers.castBookYear(bookObj);
-    await Book.updateOne({ _id: req.params.id }, { ...bookObj, _id: req.params.id });
+    const forcedFields: Partial<BookDocument> = {
+      averageRating: oldBook.averageRating,
+      ratings: oldBook.ratings,
+      userId: oldBook.userId,
+      _id: req.params.id
+    };
+
+    await Book.updateOne({ _id: req.params.id }, { ...bookObj, ...forcedFields });
     if (newFile) {
       Helpers.unlinkSyncFromImageUrl(oldBook.imageUrl);
     }
