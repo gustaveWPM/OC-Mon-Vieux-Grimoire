@@ -15,7 +15,7 @@ const IMAGES_FOLDER_NEEDLE: string = getSlashEnvelope(IMAGES_FOLDER);
 
 namespace Helpers {
   export const getFilenameFromImageUrl = (imageUrl: string): string => imageUrl.split(IMAGES_FOLDER_NEEDLE)[1];
-  export function castBookYear(bookObj: BookDocument) {
+  export function injectCastedBookYear(bookObj: BookDocument) {
     if (typeof bookObj.year === 'string') {
       bookObj.year = parseInt(bookObj.year);
     }
@@ -71,19 +71,21 @@ export async function getBookById(req: Request, res: Response): Promise<void> {
 }
 
 export async function createBook(req: Request, res: Response, next: NextFunction) {
-  async function doCreateBook(req: Request, res: Response, next: NextFunction) {
+  async function doCreateBook() {
     const bookObj: BookDocument = JSON.parse(req.body.book);
 
     if (!req.file) {
       return res.status(StatusCodes.BAD_REQUEST).json({ message: "Vous avez essayé d'ajouter un livre sans joindre de fichier" });
     }
 
-    Helpers.castBookYear(bookObj);
+    Helpers.injectCastedBookYear(bookObj);
+
     const book = new Book({
       ...bookObj,
       userId: (req as AuthReq).auth.userId,
       imageUrl: `${req.protocol}://${req.get('host')}${IMAGES_FOLDER_NEEDLE}${req.file.filename}`
     });
+
     Helpers.computeAndInjectAverageRating(book);
 
     try {
@@ -106,14 +108,14 @@ export async function createBook(req: Request, res: Response, next: NextFunction
       return res.status(StatusCodes.BAD_REQUEST).json(errorToObj(UNKNOWN_ERROR));
     }
 
-    return await doCreateBook(req, res, next);
+    return await doCreateBook();
   }
 
   const r = await process();
   return r;
 }
 
-export async function updateBook(req: Request, res: Response, next: NextFunction) {
+export async function updateBook(req: Request, res: Response) {
   const newFile = req.file;
   const bookObj = newFile
     ? {
@@ -133,7 +135,8 @@ export async function updateBook(req: Request, res: Response, next: NextFunction
       return res.status(StatusCodes.UNAUTHORIZED).json({ message: 'Unauthorized' });
     }
 
-    Helpers.castBookYear(bookObj);
+    Helpers.injectCastedBookYear(bookObj);
+
     const forcedFields: Partial<BookDocument> = {
       averageRating: oldBook.averageRating,
       ratings: oldBook.ratings,
@@ -185,7 +188,7 @@ export async function getBestBooks(_: Request, res: Response): Promise<void> {
 }
 
 export async function setBookRate(req: Request, res: Response) {
-  async function doSetBookRate(req: Request, res: Response) {
+  async function doSetBookRate() {
     const targetedBook: BookDocument | null = await Book.findOne({ _id: req.params.id });
     const currentUserId = (req as AuthReq).auth.userId;
     const newRating = { userId: currentUserId, grade: req.body.rating };
@@ -216,7 +219,7 @@ export async function setBookRate(req: Request, res: Response) {
       return res.status(StatusCodes.BAD_REQUEST).json(errorToObj(UNKNOWN_ERROR));
     }
 
-    return await doSetBookRate(req, res);
+    return await doSetBookRate();
   }
 
   const r = await process();
