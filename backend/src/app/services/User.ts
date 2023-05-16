@@ -2,6 +2,8 @@ import { validate as emailValidator } from 'email-validator';
 import { Request, Response } from 'express';
 import StatusCodes from 'http-status-codes';
 import jwt from 'jsonwebtoken';
+import { printError } from '../lib/Debugger';
+import errorToObj from '../lib/ErrorToObj';
 import User, { UserDocument } from '../models/User';
 import { TOKENS_EXPIRATION_DELAY, isValidPassword, processPasswordHashing } from './critical/UserAuth';
 
@@ -68,7 +70,8 @@ export async function userSignup(req: Request, res: Response): Promise<void> {
     await user.save();
     res.status(StatusCodes.CREATED).json({ message: 'Utilisateur créé' });
   } catch (error) {
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error });
+    printError(error);
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(errorToObj(error));
   }
 }
 
@@ -95,6 +98,7 @@ export async function userLogin(req: Request, res: Response) {
       token
     });
   } catch (error) {
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error });
+    printError(error);
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(errorToObj(error));
   }
 }

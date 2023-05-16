@@ -2,6 +2,8 @@ import { NextFunction, Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import AuthReq from '../interfaces/AuthReq';
+import { printError } from '../lib/Debugger';
+import errorToObj from '../lib/ErrorToObj';
 
 interface AuthPayload extends JwtPayload {
   userId: string;
@@ -16,7 +18,8 @@ function authMiddleware(req: Request, res: Response, next: NextFunction) {
     (req as AuthReq).auth = { userId };
     next();
   } catch (error) {
-    res.status(StatusCodes.UNAUTHORIZED).json({ error });
+    printError(error);
+    res.status(StatusCodes.UNAUTHORIZED).json(errorToObj(error));
   }
 }
 

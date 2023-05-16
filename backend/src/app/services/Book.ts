@@ -4,6 +4,8 @@ import { StatusCodes } from 'http-status-codes';
 import ServerConfig from '../../config/ServerConfig';
 import AuthReq from '../interfaces/AuthReq';
 import bookStaticFieldsValidator from '../lib/BookStaticFieldsValidator';
+import { printError } from '../lib/Debugger';
+import errorToObj from '../lib/ErrorToObj';
 import getSlashEnvelope from '../lib/GetSlashEnvelope';
 import Book, { BookDocument, IRating } from '../models/Book';
 
@@ -40,7 +42,8 @@ export async function getBooks(_: Request, res: Response): Promise<void> {
     const booksArray = books.map((book: BookDocument) => book.toObject());
     res.status(StatusCodes.OK).json(booksArray);
   } catch (error) {
-    res.status(StatusCodes.BAD_REQUEST).json({ error });
+    printError(error);
+    res.status(StatusCodes.BAD_REQUEST).json(errorToObj(error));
   }
 }
 
@@ -50,10 +53,13 @@ export async function getBookById(req: Request, res: Response): Promise<void> {
     if (book) {
       res.status(StatusCodes.OK).json(book);
     } else {
-      res.status(StatusCodes.NOT_FOUND).json({ error: 'Not found' });
+      const error = 'Not found';
+      printError(error);
+      res.status(StatusCodes.NOT_FOUND).json(errorToObj(error));
     }
   } catch (error) {
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error });
+    printError(error);
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(errorToObj(error));
   }
 }
 
@@ -78,7 +84,8 @@ export async function createBook(req: Request, res: Response, next: NextFunction
     res.status(StatusCodes.CREATED).json({ message: 'Livre enregistré' });
     next();
   } catch (error) {
-    res.status(StatusCodes.BAD_REQUEST).json({ error });
+    printError(error);
+    res.status(StatusCodes.BAD_REQUEST).json(errorToObj(error));
   }
 }
 
@@ -110,7 +117,8 @@ export async function updateBook(req: Request, res: Response, next: NextFunction
     }
     res.status(StatusCodes.OK).json({ message: 'Livre modifié !' });
   } catch (error) {
-    res.status(StatusCodes.BAD_REQUEST).json({ error });
+    printError(error);
+    res.status(StatusCodes.BAD_REQUEST).json(errorToObj(error));
   }
 }
 
@@ -127,7 +135,8 @@ export async function deleteBookById(req: Request, res: Response) {
     await Book.deleteOne({ _id: req.params.id });
     res.status(StatusCodes.OK).json({ message: 'Objet supprimé' });
   } catch (error) {
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error });
+    printError(error);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(errorToObj(error));
   }
 }
 
@@ -140,7 +149,8 @@ export async function getBestBooks(_: Request, res: Response): Promise<void> {
     const booksArray = topBooks.map((topBook: BookDocument) => topBook.toObject());
     res.status(StatusCodes.OK).json(booksArray);
   } catch (error) {
-    res.status(StatusCodes.BAD_REQUEST).json({ error });
+    printError(error);
+    res.status(StatusCodes.BAD_REQUEST).json(errorToObj(error));
   }
 }
 
@@ -165,6 +175,7 @@ export async function setBookRate(req: Request, res: Response) {
     await Book.updateOne({ _id: targetedBook._id }, { ...targetedBook.toObject() });
     await getBookById(req, res);
   } catch (error) {
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error });
+    printError(error);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(errorToObj(error));
   }
 }
