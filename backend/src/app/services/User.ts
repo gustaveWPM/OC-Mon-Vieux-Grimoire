@@ -35,32 +35,43 @@ namespace Helpers {
     const isValid = emailValidator(inputEmail);
     return isValid;
   }
+
+  export function throwIfInvalidReqBody(req: Request) {
+    if (!('email' in req.body) || !('password' in req.body)) {
+      throw new Error(Config.REJECTED_USER_MESSAGE);
+    }
+  }
 }
 
 namespace Incubator {
   export async function getUserFromEmail(inputEmail: string): Promise<UserDocument | undefined> {
     const email = inputEmail.toLowerCase().trim();
+
     if (!Helpers.isValidTrimmedAndLowercasedEmail(email)) {
       return undefined;
     }
+
     const user = await User.findOne({ email });
     if (!user) {
       return undefined;
     }
+
     return user;
   }
 }
 
 export async function userSignup(req: Request, res: Response): Promise<void> {
   try {
-    const password = await processPasswordHashing(req.body.password);
-    if (!password) {
-      throw new Error(Config.FAILED_TO_HASH_PASSWORD_ERROR);
-    }
+    Helpers.throwIfInvalidReqBody(req);
 
     const email = req.body.email.toLowerCase().trim();
     if (!Helpers.isValidTrimmedAndLowercasedEmail(email, true)) {
       throw new Error(Config.REJECTED_USER_MESSAGE);
+    }
+
+    const password = await processPasswordHashing(req.body.password);
+    if (!password) {
+      throw new Error(Config.FAILED_TO_HASH_PASSWORD_ERROR);
     }
 
     const user = new User({
@@ -77,6 +88,12 @@ export async function userSignup(req: Request, res: Response): Promise<void> {
 
 export async function userLogin(req: Request, res: Response) {
   try {
+    try {
+      Helpers.throwIfInvalidReqBody(req);
+    } catch {
+      return Helpers.setRejectedUserResponse(res);
+    }
+
     const user = await Incubator.getUserFromEmail(req.body.email);
     if (!user) {
       return Helpers.setRejectedUserResponse(res);
