@@ -124,7 +124,7 @@ export async function updateBook(req: Request, res: Response, next: NextFunction
 
   const bookStaticFieldsValidationError = bookStaticFieldsValidator(bookObj);
   if (bookStaticFieldsValidationError) {
-    return res.status(StatusCodes.BAD_REQUEST).json({ bookStaticFieldsValidationError });
+    return res.status(StatusCodes.BAD_REQUEST).json(errorToObj(bookStaticFieldsValidationError));
   }
 
   try {

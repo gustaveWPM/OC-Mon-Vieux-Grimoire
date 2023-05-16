@@ -1,4 +1,5 @@
 import Book, { BookDocument } from '../models/Book';
+import { printError } from './Debugger';
 
 const DUMMY_BOOK_COMPUTED_PROPS: Partial<BookDocument> = {
   averageRating: 0,
@@ -10,6 +11,7 @@ export function bookStaticFieldsValidator(bookObj: object): Error | null {
   const validationError: Error | null = bookToValidate.validateSync();
 
   if (validationError) {
+    printError(validationError);
     return validationError;
   }
   return null;
