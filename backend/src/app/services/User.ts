@@ -2,14 +2,16 @@ import { validate as emailValidator } from 'email-validator';
 import { Request, Response } from 'express';
 import StatusCodes from 'http-status-codes';
 import jwt from 'jsonwebtoken';
+import ServerConfig from '../../config/ServerConfig';
 import { printError } from '../lib/Debugger';
 import errorToObj from '../lib/ErrorToObj';
+import isValidReqBody from '../lib/ReqBodyValidator';
 import User, { UserDocument } from '../models/User';
 import { TOKENS_EXPIRATION_DELAY, isValidPassword, processPasswordHashing } from './critical/UserAuth';
 
 namespace Config {
   export const REJECTED_USER_MESSAGE: string = 'Paire identifiant/mot de passe incorrecte';
-  export const FAILED_TO_HASH_PASSWORD_ERROR: string = 'Erreur inconnue';
+  export const FAILED_TO_HASH_PASSWORD_ERROR: string = ServerConfig.UNKNOWN_ERROR;
   export const TOKEN_SECRET = process.env.TOKEN_SECRET;
   export const MAX_MAIL_LEN: number = 40;
   export const MAIL_BLOCK_LIST: string[] = ['@yopmail.com'];
@@ -37,7 +39,7 @@ namespace Helpers {
   }
 
   export function throwIfInvalidReqBody(req: Request) {
-    if (!('email' in req.body) || !('password' in req.body)) {
+    if (!isValidReqBody(req, ['email', 'password'])) {
       throw new Error(Config.REJECTED_USER_MESSAGE);
     }
   }
