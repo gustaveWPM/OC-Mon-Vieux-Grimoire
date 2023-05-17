@@ -2,8 +2,8 @@ import { NextFunction, Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import AuthReq from '../interfaces/AuthReq';
-import { printError } from '../lib/Debugger';
-import errorToObj from '../lib/ErrorToObj';
+import { printError } from '../lib/debugger';
+import errorToObj from '../lib/errorToObj';
 
 interface AuthPayload extends JwtPayload {
   userId: string;

@@ -3,7 +3,7 @@ import mime from 'mime-types';
 import multer, { FileFilterCallback } from 'multer';
 import { v4 as uuidv4 } from 'uuid';
 import ServerConfig from '../../config/ServerConfig';
-import bookStaticFieldsValidator from '../lib/BookStaticFieldsValidator';
+import bookStaticFieldsValidator from '../lib/bookStaticFieldsValidator';
 import { BookDocument } from '../models/Book';
 
 function bookStaticFieldsValidation(req: Request, file: Express.Multer.File): Error | null {

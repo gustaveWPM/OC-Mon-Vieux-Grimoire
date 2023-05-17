@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import tryGetApp from './app/App';
+import tryGetApp from './app/app';
 import ServerConfig from './config/ServerConfig';
 
 const { PORT } = ServerConfig;

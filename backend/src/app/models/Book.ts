@@ -1,8 +1,8 @@
 import mongoose, { Document, Schema } from 'mongoose';
-import { validator as bookStringFieldValidator, message as bookStringFieldValidatorMsg } from '../lib/BookStringFieldValidator';
-import { validator as yearValidator, message as yearValidatorMsg } from '../lib/YearValidator';
+import { validator as bookStringFieldValidator, message as bookStringFieldValidatorMsg } from '../lib/bookStringFieldValidator';
+import { validator as yearValidator, message as yearValidatorMsg } from '../lib/yearValidator';
 
-export interface IRating extends Document {
+export interface BookRating extends Document {
   userId: string;
   grade: number;
 }
@@ -12,7 +12,7 @@ export interface BookDocument extends Document {
   author: string;
   genre: string;
   year: string | number;
-  ratings: IRating[];
+  ratings: BookRating[];
   averageRating: number;
   imageUrl: string;
   userId: string;
@@ -22,7 +22,7 @@ const BOOK_MIN_RATE = 0;
 const BOOK_MAX_RATE = 5;
 const bookRateMongooseSpecs = { type: Number, required: true, min: BOOK_MIN_RATE, max: BOOK_MAX_RATE };
 
-const ratingSchema: Schema<IRating> = new mongoose.Schema({
+const ratingSchema: Schema<BookRating> = new mongoose.Schema({
   userId: { type: String, required: true },
   grade: bookRateMongooseSpecs
 });

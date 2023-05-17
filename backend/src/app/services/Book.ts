@@ -3,12 +3,12 @@ import fs from 'fs';
 import { StatusCodes } from 'http-status-codes';
 import ServerConfig from '../../config/ServerConfig';
 import AuthReq from '../interfaces/AuthReq';
-import bookStaticFieldsValidator from '../lib/BookStaticFieldsValidator';
-import { printError } from '../lib/Debugger';
-import errorToObj from '../lib/ErrorToObj';
-import getSlashEnvelope from '../lib/GetSlashEnvelope';
-import isValidReqBody from '../lib/ReqBodyValidator';
-import Book, { BOOKS_STRING_FIELDS, BookDocument, IRating } from '../models/Book';
+import bookStaticFieldsValidator from '../lib/bookStaticFieldsValidator';
+import { printError } from '../lib/debugger';
+import errorToObj from '../lib/errorToObj';
+import getSlashEnvelope from '../lib/getSlashEnvelope';
+import isValidReqBody from '../lib/isValidReqBody';
+import Book, { BOOKS_STRING_FIELDS, BookDocument, BookRating } from '../models/Book';
 
 const { IMAGES_FOLDER, UNKNOWN_ERROR } = ServerConfig;
 const IMAGES_FOLDER_NEEDLE: string = getSlashEnvelope(IMAGES_FOLDER);
@@ -212,7 +212,7 @@ export async function setBookRate(req: Request, res: Response) {
       return res.status(StatusCodes.NOT_MODIFIED).json(targetedBook);
     }
 
-    targetedBook.ratings.push(newRating as IRating);
+    targetedBook.ratings.push(newRating as BookRating);
     Helpers.computeAndInjectAverageRating(targetedBook);
 
     try {

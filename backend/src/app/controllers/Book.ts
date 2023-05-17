@@ -1,7 +1,7 @@
 import express, { Router } from 'express';
-import authMiddleware from '../middlewares/Auth';
-import compressMiddleware from '../middlewares/Compress';
-import bookFormMiddleware from '../middlewares/Multer';
+import authMiddleware from '../middlewares/auth';
+import compressMiddleware from '../middlewares/compress';
+import bookFormMiddleware from '../middlewares/multer';
 import { createBook, deleteBookById, getBestBooks, getBookById, getBooks, setBookRate, updateBook } from '../services/Book';
 
 const booksController: Router = express.Router();

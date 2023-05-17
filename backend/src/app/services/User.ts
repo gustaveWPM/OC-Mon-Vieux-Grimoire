@@ -3,9 +3,9 @@ import { Request, Response } from 'express';
 import StatusCodes from 'http-status-codes';
 import jwt from 'jsonwebtoken';
 import ServerConfig from '../../config/ServerConfig';
-import { printError } from '../lib/Debugger';
-import errorToObj from '../lib/ErrorToObj';
-import isValidReqBody from '../lib/ReqBodyValidator';
+import { printError } from '../lib/debugger';
+import errorToObj from '../lib/errorToObj';
+import isValidReqBody from '../lib/isValidReqBody';
 import User, { UserDocument } from '../models/User';
 import { TOKENS_EXPIRATION_DELAY, isValidPassword, processPasswordHashing } from './critical/UserAuth';
 

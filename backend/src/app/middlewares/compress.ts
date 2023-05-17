@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import fs from 'fs';
 import path from 'path';
 import sharp from 'sharp';
-import { printError } from '../lib/Debugger';
+import { printError } from '../lib/debugger';
 
 const QUALITY_RATIO: number = 80;
 const MAX_WIDTH_PX: number = 500;

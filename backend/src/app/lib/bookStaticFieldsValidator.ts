@@ -1,5 +1,5 @@
 import Book, { BookDocument } from '../models/Book';
-import { printError } from './Debugger';
+import { printError } from './debugger';
 
 const DUMMY_BOOK_COMPUTED_PROPS: Partial<BookDocument> = {
   averageRating: 0,

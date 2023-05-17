@@ -1,4 +1,4 @@
-import getSlashEnvelope from '../app/lib/GetSlashEnvelope';
+import getSlashEnvelope from '../app/lib/getSlashEnvelope';
 
 namespace InternalsConfig {
   export const SERVLET: string = '/api';
