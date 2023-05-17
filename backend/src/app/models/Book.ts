@@ -1,5 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose';
-import { validator as alphaNumFieldValidator, message as alphaNumFieldValidatorMsg } from '../lib/AlphaNumFieldValidator';
+import { validator as bookStringFieldValidator, message as bookStringFieldValidatorMsg } from '../lib/BookStringFieldValidator';
 import { validator as yearValidator, message as yearValidatorMsg } from '../lib/YearValidator';
 
 export interface IRating extends Document {
@@ -8,34 +8,35 @@ export interface IRating extends Document {
 }
 
 export interface BookDocument extends Document {
-  userId: string;
   title: string;
   author: string;
-  year: string | number;
   genre: string;
+  year: string | number;
   ratings: IRating[];
   averageRating: number;
   imageUrl: string;
+  userId: string;
 }
 
-const MIN_RATE = 0;
-const MAX_RATE = 5;
-const bookRateMongooseSpecs = { type: Number, required: true, min: MIN_RATE, max: MAX_RATE };
+const BOOK_MIN_RATE = 0;
+const BOOK_MAX_RATE = 5;
+const bookRateMongooseSpecs = { type: Number, required: true, min: BOOK_MIN_RATE, max: BOOK_MAX_RATE };
 
 const ratingSchema: Schema<IRating> = new mongoose.Schema({
   userId: { type: String, required: true },
   grade: bookRateMongooseSpecs
 });
 
-const REQUIRE_AT_LEAST_ONE_ALPHANUM_CHAR_CONSTRAINT = {
-  validator: alphaNumFieldValidator,
-  message: alphaNumFieldValidatorMsg
+const BOOK_STRING_FIELD_CONSTRAINT = {
+  validator: bookStringFieldValidator,
+  message: bookStringFieldValidatorMsg
 };
 
+export const BOOKS_STRING_FIELDS: (keyof BookDocument)[] = ['title', 'author', 'genre'];
 const bookSchema: Schema<BookDocument> = new mongoose.Schema({
-  userId: { type: String, required: true, validate: REQUIRE_AT_LEAST_ONE_ALPHANUM_CHAR_CONSTRAINT },
-  title: { type: String, required: true, validate: REQUIRE_AT_LEAST_ONE_ALPHANUM_CHAR_CONSTRAINT },
-  author: { type: String, required: true, validate: REQUIRE_AT_LEAST_ONE_ALPHANUM_CHAR_CONSTRAINT },
+  title: { type: String, required: true, validate: BOOK_STRING_FIELD_CONSTRAINT },
+  author: { type: String, required: true, validate: BOOK_STRING_FIELD_CONSTRAINT },
+  genre: { type: String, required: true, validate: BOOK_STRING_FIELD_CONSTRAINT },
   year: {
     type: Schema.Types.Mixed,
     required: true,
@@ -44,10 +45,10 @@ const bookSchema: Schema<BookDocument> = new mongoose.Schema({
       message: yearValidatorMsg
     }
   },
-  genre: { type: String, required: true, validate: REQUIRE_AT_LEAST_ONE_ALPHANUM_CHAR_CONSTRAINT },
   ratings: { type: [ratingSchema], required: true },
   averageRating: bookRateMongooseSpecs,
-  imageUrl: { type: String, required: true }
+  imageUrl: { type: String, required: true },
+  userId: { type: String, required: true }
 });
 
 bookSchema.index({ averageRating: -1 });
