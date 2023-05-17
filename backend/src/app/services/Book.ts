@@ -12,6 +12,7 @@ import Book, { BOOKS_STRING_FIELDS, BookDocument, BookRating } from '../models/B
 
 const { IMAGES_FOLDER, UNKNOWN_ERROR } = ServerConfig;
 const IMAGES_FOLDER_NEEDLE: string = getSlashEnvelope(IMAGES_FOLDER);
+const BEST_BOOKS_AMOUNT_LIMIT: number = 3;
 
 namespace Helpers {
   export const getFilenameFromImageUrl = (imageUrl: string): string => imageUrl.split(IMAGES_FOLDER_NEEDLE)[1];
@@ -139,7 +140,8 @@ export async function updateBook(req: Request, res: Response) {
   }
 
   try {
-    const oldBook = await Book.findOne({ _id: req.params.id });
+    const targetedBookId = req.params.id;
+    const oldBook = await Book.findOne({ _id: targetedBookId });
     if (!oldBook || oldBook.userId !== (req as AuthReq).auth.userId) {
       return res.status(StatusCodes.UNAUTHORIZED).json({ message: 'Unauthorized' });
     }
@@ -147,18 +149,17 @@ export async function updateBook(req: Request, res: Response) {
     Helpers.injectCastedBookYear(bookObj);
     Helpers.injectTrimmedStringFields(bookObj);
 
-    const forcedFields: Partial<BookDocument> = {
-      averageRating: oldBook.averageRating,
-      ratings: oldBook.ratings,
-      userId: oldBook.userId,
-      _id: req.params.id
-    };
+    const booksUpdateForcedFields: (keyof BookDocument)[] = ['averageRating', 'ratings', 'userId'];
+    const forcedFields: Partial<BookDocument> = { _id: targetedBookId };
+    for (const forcedField of booksUpdateForcedFields) {
+      forcedFields[forcedField] = oldBook[forcedField];
+    }
 
-    await Book.updateOne({ _id: req.params.id }, { ...bookObj, ...forcedFields });
+    await Book.updateOne({ _id: targetedBookId }, { ...bookObj, ...forcedFields });
     if (newFile) {
       Helpers.unlinkSyncFromImageUrl(oldBook.imageUrl);
     }
-    res.status(StatusCodes.OK).json({ message: 'Livre modifié !' });
+    res.status(StatusCodes.OK).json({ message: 'Livre modifié' });
   } catch (error) {
     printError(error);
     res.status(StatusCodes.BAD_REQUEST).json(errorToObj(error));
@@ -167,7 +168,8 @@ export async function updateBook(req: Request, res: Response) {
 
 export async function deleteBookById(req: Request, res: Response) {
   try {
-    const targetedBook: BookDocument | null = await Book.findOne({ _id: req.params.id });
+    const targetedBookId = req.params.id;
+    const targetedBook: BookDocument | null = await Book.findOne({ _id: targetedBookId });
     if (!targetedBook) {
       return res.status(StatusCodes.BAD_REQUEST).json(errorToObj(UNKNOWN_ERROR));
     }
@@ -175,8 +177,8 @@ export async function deleteBookById(req: Request, res: Response) {
       return res.status(StatusCodes.BAD_REQUEST).json(errorToObj(UNKNOWN_ERROR));
     }
     Helpers.unlinkSyncFromImageUrl(targetedBook.imageUrl);
-    await Book.deleteOne({ _id: req.params.id });
-    res.status(StatusCodes.OK).json({ message: 'Objet supprimé' });
+    await Book.deleteOne({ _id: targetedBookId });
+    res.status(StatusCodes.OK).json({ message: 'Livre supprimé' });
   } catch (error) {
     printError(error);
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(errorToObj(error));
@@ -187,7 +189,7 @@ export async function getBestBooks(_: Request, res: Response): Promise<void> {
   try {
     const topBooks: BookDocument[] = await Book.find({ averageRating: { $exists: true } })
       .sort({ averageRating: -1 })
-      .limit(3);
+      .limit(BEST_BOOKS_AMOUNT_LIMIT);
 
     const booksArray = topBooks.map((topBook: BookDocument) => topBook.toObject());
     res.status(StatusCodes.OK).json(booksArray);

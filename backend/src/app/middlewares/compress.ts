@@ -4,8 +4,9 @@ import path from 'path';
 import sharp from 'sharp';
 import { printError } from '../lib/debugger';
 
-const QUALITY_RATIO: number = 80;
-const MAX_WIDTH_PX: number = 500;
+const QUALITY_RATIO: number = 90;
+const MAX_WIDTH_PX: number = 750;
+const MAX_HEIGHT_PX: number = 900;
 
 export async function compressMiddleware(req: Request, _: Response, next: NextFunction) {
   if (!req.file || !req.file.filename) {
@@ -18,7 +19,10 @@ export async function compressMiddleware(req: Request, _: Response, next: NextFu
   const lastDotIndex = filename.lastIndexOf('.');
   filename = filename.slice(0, lastDotIndex) + '-sharp.webp';
 
-  await sharp(file.path).resize(MAX_WIDTH_PX).webp({ quality: QUALITY_RATIO }).toFile(path.resolve(file.destination, filename));
+  await sharp(file.path)
+    .resize(MAX_WIDTH_PX, MAX_HEIGHT_PX, { fit: 'cover' })
+    .webp({ quality: QUALITY_RATIO })
+    .toFile(path.resolve(file.destination, filename));
   try {
     fs.unlinkSync(file.path);
   } catch (error) {

@@ -10,16 +10,35 @@ import User, { UserDocument } from '../models/User';
 import { TOKENS_EXPIRATION_DELAY, isValidPassword, processPasswordHashing } from './critical/UserAuth';
 
 namespace Config {
-  export const REJECTED_USER_MESSAGE: string = 'Paire identifiant/mot de passe incorrecte';
-  export const FAILED_TO_HASH_PASSWORD_ERROR: string = ServerConfig.UNKNOWN_ERROR;
-  export const TOKEN_SECRET = process.env.TOKEN_SECRET;
   export const MAX_MAIL_LEN: number = 40;
+  export const MIN_PASSWORD_LEN: number = 8;
+  export const MIN_PASSWORD_DIFFERENT_CHARS: number = 2;
+  export const REJECTED_USER_ERROR: string = 'Paire identifiant/mot de passe incorrecte';
+  export const TOO_SHORT_PASSWORD_ERROR: string = `Le mot de passe doit faire minimum ${MIN_PASSWORD_LEN} caractère${
+    MIN_PASSWORD_LEN > 1 ? 's' : ''
+  }, et doit contenir au minimum ${MIN_PASSWORD_DIFFERENT_CHARS} caractère${MIN_PASSWORD_DIFFERENT_CHARS > 1 ? 's' : ''} différents.`;
+  export const FAILED_TO_HASH_PASSWORD_ERROR: string = ServerConfig.UNKNOWN_ERROR;
+  export const FAILED_TO_RETRIEVE_TOKEN_SECRET_ERROR: string = ServerConfig.UNKNOWN_ERROR;
+  export const TOKEN_SECRET = process.env.TOKEN_SECRET;
   export const MAIL_BLOCK_LIST: string[] = ['@yopmail.com'];
 }
 
 namespace Helpers {
   export const setRejectedUserResponse = (res: Response): Response =>
-    res.status(StatusCodes.UNAUTHORIZED).json({ message: Config.REJECTED_USER_MESSAGE });
+    res.status(StatusCodes.UNAUTHORIZED).json({ message: Config.REJECTED_USER_ERROR });
+
+  export function isAuthorizedPassword(inputPassword: string) {
+    if (inputPassword.length < Config.MIN_PASSWORD_LEN) {
+      return false;
+    }
+
+    const uniqCharsSet = new Set(inputPassword);
+    if (uniqCharsSet.size < Config.MIN_PASSWORD_DIFFERENT_CHARS) {
+      return false;
+    }
+
+    return true;
+  }
 
   export function isValidTrimmedAndLowercasedEmail(inputEmail: string, onEdit: boolean = false) {
     if (inputEmail.length > Config.MAX_MAIL_LEN) {
@@ -40,7 +59,7 @@ namespace Helpers {
 
   export function throwIfInvalidReqBody(req: Request) {
     if (!isValidReqBody(req, ['email', 'password'])) {
-      throw new Error(Config.REJECTED_USER_MESSAGE);
+      throw new Error(Config.REJECTED_USER_ERROR);
     }
   }
 }
@@ -68,18 +87,29 @@ export async function userSignup(req: Request, res: Response): Promise<void> {
 
     const email = req.body.email.toLowerCase().trim();
     if (!Helpers.isValidTrimmedAndLowercasedEmail(email, true)) {
-      throw new Error(Config.REJECTED_USER_MESSAGE);
+      throw new Error(Config.REJECTED_USER_ERROR);
     }
 
-    const password = await processPasswordHashing(req.body.password);
-    if (!password) {
+    const givenPassword = req.body.password;
+    if (!Helpers.isAuthorizedPassword(givenPassword)) {
+      throw new Error(Config.TOO_SHORT_PASSWORD_ERROR);
+    }
+
+    const hashedPassword = await processPasswordHashing(givenPassword);
+    if (!hashedPassword) {
       throw new Error(Config.FAILED_TO_HASH_PASSWORD_ERROR);
     }
 
     const user = new User({
       email,
-      password
+      password: hashedPassword
     });
+
+    const validationError: Error | null = user.validateSync();
+    if (validationError) {
+      throw validationError;
+    }
+
     await user.save();
     res.status(StatusCodes.CREATED).json({ message: 'Utilisateur créé' });
   } catch (error) {
@@ -108,7 +138,7 @@ export async function userLogin(req: Request, res: Response) {
 
     const TOKEN_SECRET = Config.TOKEN_SECRET;
     if (!TOKEN_SECRET) {
-      throw new Error('CRITICAL ERROR: Missing TOKEN_SECRET value in .env!');
+      throw new Error(Config.FAILED_TO_RETRIEVE_TOKEN_SECRET_ERROR);
     }
 
     const token = jwt.sign({ userId: user._id }, TOKEN_SECRET, { expiresIn: TOKENS_EXPIRATION_DELAY });
