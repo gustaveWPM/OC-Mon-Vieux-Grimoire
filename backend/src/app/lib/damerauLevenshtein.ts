@@ -1,18 +1,18 @@
-// * ... https://en.wikipedia.org/wiki/Damerau–Levenshtein_distance
-
 export function damerauLevenshtein(s1: string, s2: string): number {
-  const matrix: number[][] = Array.from({ length: s1.length + 1 }, () => new Array(s2.length + 1).fill(0));
+  const s1len = s1.length;
+  const s2len = s2.length;
+  const matrix: number[][] = Array.from({ length: s1len + 1 }, () => new Array(s2len + 1).fill(0));
 
-  for (let i: number = 1; i <= s1.length; i++) {
+  for (let i: number = 1; i <= s1len; i++) {
     matrix[i][0] = i;
   }
 
-  for (let j: number = 1; j <= s2.length; j++) {
+  for (let j: number = 1; j <= s2len; j++) {
     matrix[0][j] = j;
   }
 
-  for (let i: number = 1; i <= s1.length; i++) {
-    for (let j: number = 1; j <= s2.length; j++) {
+  for (let i: number = 1; i <= s1len; i++) {
+    for (let j: number = 1; j <= s2len; j++) {
       if (s1[i - 1] === s2[j - 1]) {
         matrix[i][j] = matrix[i - 1][j - 1];
       } else {
@@ -23,7 +23,7 @@ export function damerauLevenshtein(s1: string, s2: string): number {
       }
     }
   }
-  return matrix[s1.length][s2.length];
+  return matrix[s1len][s2len];
 }
 
 export default damerauLevenshtein;
