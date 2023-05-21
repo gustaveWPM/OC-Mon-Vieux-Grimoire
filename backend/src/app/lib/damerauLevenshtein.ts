@@ -1,13 +1,13 @@
 // * ... https://en.wikipedia.org/wiki/Damerau–Levenshtein_distance
 
 export function damerauLevenshtein(s1: string, s2: string): number {
-  const matrix: number[][] = new Array(s1.length + 1).fill(0).map(() => new Array(s2.length + 1).fill(0));
+  const matrix: number[][] = Array.from({ length: s1.length + 1 }, () => new Array(s2.length + 1).fill(0));
 
-  for (let i: number = 0; i <= s1.length; i++) {
+  for (let i: number = 1; i <= s1.length; i++) {
     matrix[i][0] = i;
   }
 
-  for (let j: number = 0; j <= s2.length; j++) {
+  for (let j: number = 1; j <= s2.length; j++) {
     matrix[0][j] = j;
   }
 
