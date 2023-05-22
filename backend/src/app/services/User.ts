@@ -25,6 +25,7 @@ namespace Config {
   }, doit contenir au minimum ${MIN_PASSWORD_DIFFERENT_CHARS} caractère${
     MIN_PASSWORD_DIFFERENT_CHARS > 1 ? 's' : ''
   } différents, être suffisamment complexe ('12345678' n'est pas complexe, '${PASSWORD_EXAMPLE}' est complexe), et ne pas être détecté par notre système comme étant un mot de passe qui aurait fuité.`;
+  export const PASSWORD_IS_TOO_SIMILAR_TO_EMAIL_ERROR: string = "Votre mot de passe est trop similaire à l'adresse email de votre compte.";
   export const FAILED_TO_HASH_PASSWORD_ERROR: string = ServerConfig.UNKNOWN_ERROR;
   export const FAILED_TO_RETRIEVE_TOKEN_SECRET_ERROR: string = ServerConfig.UNKNOWN_ERROR;
   export const TOKEN_SECRET = process.env.TOKEN_SECRET;
@@ -77,6 +78,20 @@ namespace Helpers {
 
   export const setRejectedUserResponse = (res: Response): Response =>
     res.status(StatusCodes.UNAUTHORIZED).json({ message: Config.REJECTED_USER_ERROR });
+
+  export function throwIfPasswordIsTooSimilarToEmail(givenEmail: string, givenPassword: string) {
+    const minDistance = PasswordsConfig.MIN_EMAIL_AND_PASSWORD_DISTANCE;
+    const givenPasswordLength = givenPassword.length;
+    let givenPasswordAndGivenEmailDamerauLevenshteinDistance = minDistance + 1;
+
+    if (givenPasswordLength >= Math.abs(givenPasswordLength - minDistance) && givenPasswordLength <= givenPasswordLength + minDistance) {
+      givenPasswordAndGivenEmailDamerauLevenshteinDistance = damerauLevenshtein(givenEmail, givenPassword);
+    }
+
+    if (givenPasswordAndGivenEmailDamerauLevenshteinDistance < minDistance) {
+      throw new Error(Config.PASSWORD_IS_TOO_SIMILAR_TO_EMAIL_ERROR);
+    }
+  }
 
   export function throwIfUnauthorizedPassword(givenPassword: string) {
     const forbiddenExamplePasswordUsageError: Error = new Error(
@@ -150,12 +165,14 @@ export async function userSignup(req: Request, res: Response): Promise<void> {
   try {
     Helpers.throwIfInvalidReqBody(req);
 
-    const email = req.body.email.toLowerCase().trim();
-    if (!Helpers.isValidTrimmedAndLowercasedEmail(email, true)) {
+    const givenEmail = req.body.email.toLowerCase().trim();
+    if (!Helpers.isValidTrimmedAndLowercasedEmail(givenEmail, true)) {
       throw new Error(Config.REJECTED_USER_ERROR);
     }
 
     const givenPassword = req.body.password;
+
+    Helpers.throwIfPasswordIsTooSimilarToEmail(givenEmail, givenPassword);
     Helpers.throwIfUnauthorizedPassword(givenPassword);
 
     const hashedPassword = await processPasswordHashing(givenPassword);
@@ -164,7 +181,7 @@ export async function userSignup(req: Request, res: Response): Promise<void> {
     }
 
     const user = new User({
-      email,
+      email: givenEmail,
       password: hashedPassword
     });
 
