@@ -7,6 +7,7 @@ import AtlasConfig from '../config/AtlasConfig';
 import ServerConfig from '../config/ServerConfig';
 import booksController from './controllers/Book';
 import usersController from './controllers/User';
+import getSlashEnvelope from './lib/getSlashEnvelope';
 
 async function tryToConnectToMongoDB() {
   const { USERNAME, PASSWORD, CLUSTER_URI, DB_NAME } = AtlasConfig;
@@ -41,7 +42,8 @@ function appBinder(app: Express) {
 
   const useBodyParserJSON = () => app.use(bodyParser.json());
   const useBodyParserURLEncoded = () => app.use(bodyParser.urlencoded({ extended: true }));
-  const setStaticRoutes = () => app.use(`/${IMAGES_FOLDER}`, express.static(path.join(__dirname, IMAGES_FOLDER_RELATIVE_PATH_FROM_APP_CTX)));
+  const setStaticRoutes = () =>
+    app.use(getSlashEnvelope(IMAGES_FOLDER), express.static(path.join(__dirname, IMAGES_FOLDER_RELATIVE_PATH_FROM_APP_CTX)));
 
   setCorsHeader();
   useBodyParserJSON();

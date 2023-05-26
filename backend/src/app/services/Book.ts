@@ -8,7 +8,7 @@ import { printError } from '../lib/debugger';
 import errorToObj from '../lib/errorToObj';
 import getSlashEnvelope from '../lib/getSlashEnvelope';
 import isValidReqBody from '../lib/isValidReqBody';
-import Book, { BOOKS_STRING_FIELDS, BookDocument, BookRating } from '../models/Book';
+import Book, { BOOKS_OPTIONAL_STRING_INPUT_FIELDS, BOOKS_REQUIRED_STRING_INPUT_FIELDS, BookDocument, BookRating } from '../models/Book';
 
 const { IMAGES_FOLDER, UNKNOWN_ERROR } = ServerConfig;
 const IMAGES_FOLDER_NEEDLE: string = getSlashEnvelope(IMAGES_FOLDER);
@@ -22,10 +22,12 @@ namespace Helpers {
     }
   }
 
-  export function injectTrimmedStringFields(bookObj: BookDocument) {
-    for (const stringField of BOOKS_STRING_FIELDS) {
-      if (typeof bookObj[stringField] === 'string') {
-        (bookObj[stringField] as string) = bookObj[stringField].trim();
+  export function injectTrimmedStringInputFields(bookObj: BookDocument) {
+    const bookStringInputFields: (keyof BookDocument)[] = [...BOOKS_REQUIRED_STRING_INPUT_FIELDS, ...BOOKS_OPTIONAL_STRING_INPUT_FIELDS];
+
+    for (const stringInputField of bookStringInputFields) {
+      if (typeof bookObj[stringInputField] === 'string') {
+        (bookObj[stringInputField] as string) = bookObj[stringInputField].trim();
       }
     }
   }
@@ -88,7 +90,7 @@ export async function createBook(req: Request, res: Response, next: NextFunction
     }
 
     Helpers.injectCastedBookYear(bookObj);
-    Helpers.injectTrimmedStringFields(bookObj);
+    Helpers.injectTrimmedStringInputFields(bookObj);
 
     const book = new Book({
       ...bookObj,
@@ -147,7 +149,7 @@ export async function updateBook(req: Request, res: Response) {
     }
 
     Helpers.injectCastedBookYear(bookObj);
-    Helpers.injectTrimmedStringFields(bookObj);
+    Helpers.injectTrimmedStringInputFields(bookObj);
 
     const booksUpdateForcedFields: (keyof BookDocument)[] = ['averageRating', 'ratings', 'userId'];
     const forcedFields: Partial<BookDocument> = { _id: targetedBookId };

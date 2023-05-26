@@ -13,7 +13,7 @@ export async function compressMiddleware(req: Request, _: Response, next: NextFu
     next();
     return;
   }
-  const file = req.file!;
+  const file = req.file;
   let { filename } = file;
 
   const lastDotIndex = filename.lastIndexOf('.');

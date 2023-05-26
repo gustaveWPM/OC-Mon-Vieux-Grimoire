@@ -18,6 +18,10 @@ export interface BookDocument extends Document {
   userId: string;
 }
 
+export const BOOKS_REQUIRED_STRING_INPUT_FIELDS: (keyof BookDocument)[] = ['title', 'author', 'genre'];
+
+export const BOOKS_OPTIONAL_STRING_INPUT_FIELDS: (keyof BookDocument)[] = [];
+
 const BOOK_MIN_RATE = 0;
 const BOOK_MAX_RATE = 5;
 const bookRateMongooseSpecs = { type: Number, required: true, min: BOOK_MIN_RATE, max: BOOK_MAX_RATE };
@@ -27,16 +31,34 @@ const ratingSchema: Schema<BookRating> = new mongoose.Schema({
   grade: bookRateMongooseSpecs
 });
 
-const BOOK_STRING_FIELD_CONSTRAINT = {
+const BOOK_STRING_INPUT_FIELD_CONSTRAINT = {
   validator: bookStringFieldValidator,
   message: bookStringFieldValidatorMsg
 };
 
-export const BOOKS_STRING_FIELDS: (keyof BookDocument)[] = ['title', 'author', 'genre'];
-const bookSchema: Schema<BookDocument> = new mongoose.Schema({
-  title: { type: String, required: true, validate: BOOK_STRING_FIELD_CONSTRAINT },
-  author: { type: String, required: true, validate: BOOK_STRING_FIELD_CONSTRAINT },
-  genre: { type: String, required: true, validate: BOOK_STRING_FIELD_CONSTRAINT },
+type NaiveSchemaRuleset = Record<string, unknown>;
+
+namespace Helpers {
+  export function injectBookStringInputFields(bookSchemaRuleset: NaiveSchemaRuleset) {
+    const bookSchemaRulesetBase: NaiveSchemaRuleset = {
+      type: String,
+      validate: BOOK_STRING_INPUT_FIELD_CONSTRAINT
+    };
+
+    for (const requiredStringField of BOOKS_REQUIRED_STRING_INPUT_FIELDS) {
+      bookSchemaRuleset[requiredStringField] = {
+        ...bookSchemaRulesetBase,
+        required: true
+      };
+    }
+
+    for (const optionalStringField of BOOKS_OPTIONAL_STRING_INPUT_FIELDS) {
+      bookSchemaRuleset[optionalStringField] = bookSchemaRulesetBase;
+    }
+  }
+}
+
+const bookSchemaRuleset: NaiveSchemaRuleset = {
   year: {
     type: Schema.Types.Mixed,
     required: true,
@@ -49,8 +71,11 @@ const bookSchema: Schema<BookDocument> = new mongoose.Schema({
   averageRating: bookRateMongooseSpecs,
   imageUrl: { type: String, required: true },
   userId: { type: String, required: true }
-});
+};
 
+Helpers.injectBookStringInputFields(bookSchemaRuleset);
+
+const bookSchema: Schema<BookDocument> = new mongoose.Schema(bookSchemaRuleset);
 bookSchema.index({ averageRating: -1 });
 
 export default mongoose.model<BookDocument>('Book', bookSchema);

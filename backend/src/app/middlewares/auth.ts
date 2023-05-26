@@ -4,6 +4,7 @@ import jwt, { JwtPayload } from 'jsonwebtoken';
 import AuthReq from '../interfaces/AuthReq';
 import { printError } from '../lib/debugger';
 import errorToObj from '../lib/errorToObj';
+import ServerConfig from '../../config/ServerConfig';
 
 interface AuthPayload extends JwtPayload {
   userId: string;
@@ -11,8 +12,13 @@ interface AuthPayload extends JwtPayload {
 
 function authMiddleware(req: Request, res: Response, next: NextFunction) {
   try {
-    const token = req.headers.authorization?.split(' ')[1];
-    const decodedToken = jwt.verify(token!, process.env.TOKEN_SECRET!);
+    const { UNKNOWN_ERROR } = ServerConfig;
+    if (!req.headers.authorization || !process.env.TOKEN_SECRET) {
+      throw new Error(UNKNOWN_ERROR);
+    }
+
+    const token = req.headers.authorization.split(' ')[1];
+    const decodedToken = jwt.verify(token, process.env.TOKEN_SECRET);
     const userId = (decodedToken as AuthPayload).userId;
 
     (req as AuthReq).auth = { userId };
