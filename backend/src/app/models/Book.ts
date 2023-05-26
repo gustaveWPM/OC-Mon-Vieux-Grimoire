@@ -19,7 +19,6 @@ export interface BookDocument extends Document {
 }
 
 export const BOOKS_REQUIRED_STRING_INPUT_FIELDS: (keyof BookDocument)[] = ['title', 'author', 'genre'];
-
 export const BOOKS_OPTIONAL_STRING_INPUT_FIELDS: (keyof BookDocument)[] = [];
 
 const BOOK_MIN_RATE = 0;
@@ -40,20 +39,20 @@ type NaiveSchemaRuleset = Record<string, unknown>;
 
 namespace Helpers {
   export function injectBookStringInputFields(bookSchemaRuleset: NaiveSchemaRuleset) {
-    const bookSchemaRulesetBase: NaiveSchemaRuleset = {
+    const bookSchemaStringInputFieldRulesetBase: NaiveSchemaRuleset = {
       type: String,
       validate: BOOK_STRING_INPUT_FIELD_CONSTRAINT
     };
 
     for (const requiredStringField of BOOKS_REQUIRED_STRING_INPUT_FIELDS) {
       bookSchemaRuleset[requiredStringField] = {
-        ...bookSchemaRulesetBase,
+        ...bookSchemaStringInputFieldRulesetBase,
         required: true
       };
     }
 
     for (const optionalStringField of BOOKS_OPTIONAL_STRING_INPUT_FIELDS) {
-      bookSchemaRuleset[optionalStringField] = bookSchemaRulesetBase;
+      bookSchemaRuleset[optionalStringField] = bookSchemaStringInputFieldRulesetBase;
     }
   }
 }

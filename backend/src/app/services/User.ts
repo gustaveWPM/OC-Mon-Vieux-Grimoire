@@ -9,7 +9,7 @@ import damerauLevenshtein from '../lib/damerauLevenshtein';
 import { printError } from '../lib/debugger';
 import errorToObj from '../lib/errorToObj';
 import getPasswordAudit from '../lib/getPasswordAudit';
-import isValidReqBody from '../lib/isValidReqBody';
+import reqBodyContainsMandatoryFieldsKeys from '../lib/reqBodyContainsMandatoryFieldsKeys';
 import User, { UserDocument } from '../models/User';
 import { TOKENS_EXPIRATION_DELAY, isValidPassword, processPasswordHashing } from './critical/UserAuth';
 
@@ -138,7 +138,7 @@ namespace Helpers {
   }
 
   export function throwIfInvalidReqBody(req: Request) {
-    if (!isValidReqBody(req, ['email', 'password'])) {
+    if (!reqBodyContainsMandatoryFieldsKeys(req, ['email', 'password'])) {
       throw new Error(Config.REJECTED_USER_ERROR);
     }
   }

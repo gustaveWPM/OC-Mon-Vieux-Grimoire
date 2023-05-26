@@ -7,7 +7,7 @@ import bookStaticFieldsValidator from '../lib/bookStaticFieldsValidator';
 import { printError } from '../lib/debugger';
 import errorToObj from '../lib/errorToObj';
 import getSlashEnvelope from '../lib/getSlashEnvelope';
-import isValidReqBody from '../lib/isValidReqBody';
+import reqBodyContainsMandatoryFieldsKeys from '../lib/reqBodyContainsMandatoryFieldsKeys';
 import Book, { BOOKS_OPTIONAL_STRING_INPUT_FIELDS, BOOKS_REQUIRED_STRING_INPUT_FIELDS, BookDocument, BookRating } from '../models/Book';
 
 const { IMAGES_FOLDER, UNKNOWN_ERROR } = ServerConfig;
@@ -116,7 +116,7 @@ export async function createBook(req: Request, res: Response, next: NextFunction
   }
 
   async function process() {
-    if (!isValidReqBody(req, ['book'])) {
+    if (!reqBodyContainsMandatoryFieldsKeys(req, ['book'])) {
       return res.status(StatusCodes.BAD_REQUEST).json(errorToObj(UNKNOWN_ERROR));
     }
 
@@ -229,7 +229,7 @@ export async function setBookRate(req: Request, res: Response) {
   }
 
   async function process() {
-    if (!isValidReqBody(req, ['rating'])) {
+    if (!reqBodyContainsMandatoryFieldsKeys(req, ['rating'])) {
       return res.status(StatusCodes.BAD_REQUEST).json(errorToObj(UNKNOWN_ERROR));
     }
 

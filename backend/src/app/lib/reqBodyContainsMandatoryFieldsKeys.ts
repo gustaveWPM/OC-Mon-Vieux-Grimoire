@@ -1,6 +1,6 @@
 import { Request } from 'express';
 
-export function isValidReqBody(req: Request, mantadoryFields: string[]) {
+export function reqBodyContainsMandatoryFieldsKeys(req: Request, mantadoryFields: string[]) {
   for (const mandatoryField of mantadoryFields) {
     if (!(mandatoryField in req.body)) {
       return false;
@@ -9,4 +9,4 @@ export function isValidReqBody(req: Request, mantadoryFields: string[]) {
   return true;
 }
 
-export default isValidReqBody;
+export default reqBodyContainsMandatoryFieldsKeys;
