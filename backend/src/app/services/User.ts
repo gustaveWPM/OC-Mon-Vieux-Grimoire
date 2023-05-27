@@ -20,6 +20,8 @@ namespace Config {
   export const MAX_PASSWORD_LEN: number = MAX_UNHASHED_PASSWORD_LEN;
   export const MIN_PASSWORD_DIFFERENT_CHARS: number = MIN_PASSWORD_DIFFERENT_CHARACTERS;
   export const REJECTED_USER_ERROR: string = 'Paire identifiant/mot de passe incorrecte';
+  export const REJECTED_EMAIL_ERROR_GENERATOR = (givenEmail: string) =>
+    `Adresse email invalide: "${givenEmail}" n'est pas une adresse email valide. Soit l'adresse email que vous avez entrée n'est pas une adresse email correcte, soit votre fournisseur d'adresse email est bloqué par notre système.`;
   export const TOO_SHORT_PASSWORD_ERROR: string = `Le mot de passe doit contenir entre ${MIN_PASSWORD_LEN} et ${MAX_PASSWORD_LEN} caractère${
     MAX_PASSWORD_LEN > 1 ? 's' : ''
   }, doit contenir au minimum ${MIN_PASSWORD_DIFFERENT_CHARS} caractère${
@@ -167,7 +169,7 @@ export async function userSignup(req: Request, res: Response): Promise<void> {
 
     const givenEmail = req.body.email.toLowerCase().trim();
     if (!Helpers.isValidTrimmedAndLowercasedEmail(givenEmail, true)) {
-      throw new Error(Config.REJECTED_USER_ERROR);
+      throw new Error(Config.REJECTED_EMAIL_ERROR_GENERATOR(givenEmail));
     }
 
     const givenPassword = req.body.password;
