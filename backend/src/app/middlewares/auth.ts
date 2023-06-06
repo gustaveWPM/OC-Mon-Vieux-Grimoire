@@ -1,10 +1,10 @@
 import { NextFunction, Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import jwt, { JwtPayload } from 'jsonwebtoken';
+import ServerConfig from '../../config/ServerConfig';
 import AuthReq from '../interfaces/AuthReq';
 import { printError } from '../lib/debugger';
 import errorToObj from '../lib/errorToObj';
-import ServerConfig from '../../config/ServerConfig';
 
 interface AuthPayload extends JwtPayload {
   userId: string;

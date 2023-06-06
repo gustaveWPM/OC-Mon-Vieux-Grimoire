@@ -1,4 +1,3 @@
-import { isValidEmail, rejectBeforeTrim, message as emailValidatorMsg } from '../lib/emailValidator';
 import { Request, Response } from 'express';
 import StatusCodes from 'http-status-codes';
 import jwt from 'jsonwebtoken';
@@ -7,6 +6,7 @@ import PasswordsConfig from '../../config/PasswordsConfig';
 import ServerConfig from '../../config/ServerConfig';
 import damerauLevenshtein from '../lib/damerauLevenshtein';
 import { printError } from '../lib/debugger';
+import { tryToFormatEmail } from '../lib/emailValidator';
 import errorToObj from '../lib/errorToObj';
 import getPasswordAudit from '../lib/getPasswordAudit';
 import reqBodyContainsMandatoryFieldsKeys from '../lib/reqBodyContainsMandatoryFieldsKeys';
@@ -79,13 +79,13 @@ namespace Helpers {
   export const setRejectedUserResponse = (res: Response): Response =>
     res.status(StatusCodes.UNAUTHORIZED).json({ message: Config.REJECTED_USER_ERROR });
 
-  export function throwIfPasswordIsTooSimilarToEmail(trimmedGivenEmail: string, givenPassword: string) {
+  export function throwIfPasswordIsTooSimilarToEmail(formattedEmail: string, givenPassword: string) {
     const minDistance = PasswordsConfig.MIN_EMAIL_AND_PASSWORD_DISTANCE;
     const givenPasswordLength = givenPassword.length;
     let givenPasswordAndGivenEmailDamerauLevenshteinDistance = minDistance + 1;
 
     if (givenPasswordLength >= Math.abs(givenPasswordLength - minDistance) && givenPasswordLength <= givenPasswordLength + minDistance) {
-      givenPasswordAndGivenEmailDamerauLevenshteinDistance = damerauLevenshtein(trimmedGivenEmail, givenPassword);
+      givenPasswordAndGivenEmailDamerauLevenshteinDistance = damerauLevenshtein(formattedEmail, givenPassword);
     }
 
     if (givenPasswordAndGivenEmailDamerauLevenshteinDistance < minDistance) {
@@ -129,17 +129,16 @@ namespace Helpers {
 
 namespace Incubator {
   export async function getUserFromEmail(inputEmail: string): Promise<UserDocument | undefined> {
-    if (!isValidEmail(inputEmail)) {
+    try {
+      const email = tryToFormatEmail(inputEmail);
+      const user = await User.findOne({ email });
+      if (!user) {
+        return undefined;
+      }
+      return user;
+    } catch {
       return undefined;
     }
-
-    const email = inputEmail.toLowerCase().trim();
-    const user = await User.findOne({ email });
-    if (!user) {
-      return undefined;
-    }
-
-    return user;
   }
 }
 
@@ -148,14 +147,10 @@ export async function userSignup(req: Request, res: Response): Promise<void> {
     Helpers.throwIfInvalidReqBody(req);
 
     const givenEmail = req.body.email;
-    if (rejectBeforeTrim(givenEmail)) {
-      throw new Error(emailValidatorMsg);
-    }
-
-    const trimmedGivenEmail = givenEmail.toLowerCase().trim();
+    const formattedEmail = tryToFormatEmail(givenEmail);
     const givenPassword = req.body.password;
 
-    Helpers.throwIfPasswordIsTooSimilarToEmail(trimmedGivenEmail, givenPassword);
+    Helpers.throwIfPasswordIsTooSimilarToEmail(formattedEmail, givenPassword);
     Helpers.throwIfUnauthorizedPassword(givenPassword);
 
     const hashedPassword = await processPasswordHashing(givenPassword);
@@ -164,7 +159,7 @@ export async function userSignup(req: Request, res: Response): Promise<void> {
     }
 
     const user = new User({
-      email: trimmedGivenEmail,
+      email: formattedEmail,
       password: hashedPassword
     });
 

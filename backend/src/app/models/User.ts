@@ -1,6 +1,6 @@
 import { Document, Schema, model } from 'mongoose';
-import {validator as emailValidator, message as emailValidatorMsg} from '../lib/emailValidator'
 import uniqueValidator from 'mongoose-unique-validator';
+import { validator as emailValidator, message as emailValidatorMsg } from '../lib/emailValidator';
 
 export interface UserDocument extends Document {
   email: string;
