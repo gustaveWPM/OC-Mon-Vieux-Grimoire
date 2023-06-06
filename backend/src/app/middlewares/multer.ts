@@ -45,5 +45,6 @@ function fileFilter(_: Request, file: Express.Multer.File, callback: FileFilterC
   }
 }
 
-export const bookFormMiddleware = multer({ storage, fileFilter }).single('image');
+const { FILE_UPLOAD_MB_LIMIT } = ServerConfig;
+export const bookFormMiddleware = multer({ storage, fileFilter, limits: { fileSize: FILE_UPLOAD_MB_LIMIT * 1048576 } }).single('image');
 export default bookFormMiddleware;

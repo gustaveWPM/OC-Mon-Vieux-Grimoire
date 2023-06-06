@@ -1,7 +1,7 @@
 import { validate as emailValidator } from 'email-validator';
 import isLowerCase from './isLowercase';
 
-const MAX_UNTRIMMED_MAIL_LEN: number = 50;
+export const MAX_UNTRIMMED_MAIL_LEN: number = 50;
 const MAIL_BLOCK_LIST: string[] = ['@yopmail.com'];
 const MAX_MAIL_LEN: number = 40;
 
