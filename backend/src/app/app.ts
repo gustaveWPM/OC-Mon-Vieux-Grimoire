@@ -38,12 +38,18 @@ function appBinder(app: Express) {
     });
   }
 
-  const { IMAGES_FOLDER, IMAGES_FOLDER_RELATIVE_PATH_FROM_APP_CTX } = ServerConfig;
+  const { IMAGES_FOLDER, IMAGES_FOLDER_RELATIVE_PATH_FROM_APP_CTX, DEFAULT_PAYLOAD_SIZE_LIMIT, SIGNUP_PAYLOAD_SIZE_LIMIT } = ServerConfig;
 
-  const useBodyParserJSON = () => app.use(bodyParser.json());
-  const useBodyParserURLEncoded = () => app.use(bodyParser.urlencoded({ extended: true }));
+  let limit = DEFAULT_PAYLOAD_SIZE_LIMIT;
+  const useBodyParserJSON = () => app.use(bodyParser.json({ limit }));
+  const useBodyParserURLEncoded = () => app.use(bodyParser.urlencoded({ extended: true, limit }));
   const setStaticRoutes = () =>
     app.use(getSlashEnvelope(IMAGES_FOLDER), express.static(path.join(__dirname, IMAGES_FOLDER_RELATIVE_PATH_FROM_APP_CTX)));
+
+  const { AUTH_API_ROUTE } = ApiConfig;
+  limit = SIGNUP_PAYLOAD_SIZE_LIMIT;
+  app.use(AUTH_API_ROUTE, bodyParser.json({ limit }));
+  app.use(AUTH_API_ROUTE, bodyParser.urlencoded({ extended: true, limit }));
 
   setCorsHeader();
   useBodyParserJSON();

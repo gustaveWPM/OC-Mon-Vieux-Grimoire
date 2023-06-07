@@ -4,6 +4,7 @@ import multer, { FileFilterCallback } from 'multer';
 import { v4 as uuidv4 } from 'uuid';
 import ServerConfig from '../../config/ServerConfig';
 import bookStaticFieldsValidator from '../lib/bookStaticFieldsValidator';
+import { megabytesToBytes } from '../lib/math';
 import { BookDocument } from '../models/Book';
 
 function bookStaticFieldsValidation(req: Request, file: Express.Multer.File): Error | null {
@@ -45,5 +46,6 @@ function fileFilter(_: Request, file: Express.Multer.File, callback: FileFilterC
   }
 }
 
-export const bookFormMiddleware = multer({ storage, fileFilter }).single('image');
+const { FILE_UPLOAD_MB_LIMIT } = ServerConfig;
+export const bookFormMiddleware = multer({ storage, fileFilter, limits: { fileSize: megabytesToBytes(FILE_UPLOAD_MB_LIMIT) } }).single('image');
 export default bookFormMiddleware;
