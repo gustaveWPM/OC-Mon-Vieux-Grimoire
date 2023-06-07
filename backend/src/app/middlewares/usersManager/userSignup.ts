@@ -12,11 +12,6 @@ export async function userSignup(req: Request, res: Response) {
       password: hashedPassword
     });
 
-    const validationError: Error | null = user.validateSync();
-    if (validationError) {
-      throw validationError;
-    }
-
     await user.save();
     res.status(StatusCodes.CREATED).json({ message: 'Utilisateur créé' });
   } catch (error) {

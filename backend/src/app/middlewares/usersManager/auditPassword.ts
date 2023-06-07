@@ -107,7 +107,7 @@ namespace Helpers {
   }
 }
 
-export async function auditPassword(req: Request, res: Response, next: NextFunction) {
+export function auditPassword(req: Request, res: Response, next: NextFunction) {
   try {
     const { email, password: givenPassword } = req.body;
     const formattedEmail = tryToFormatEmail(email);

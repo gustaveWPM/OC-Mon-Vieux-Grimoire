@@ -101,10 +101,6 @@ export async function createBook(req: Request, res: Response, next: NextFunction
     Helpers.computeAndInjectAverageRating(book);
 
     try {
-      const validationError: Error | null = book.validateSync();
-      if (validationError) {
-        throw validationError;
-      }
       await book.save();
       res.status(StatusCodes.CREATED).json({ message: 'Livre enregistré' });
       next();
