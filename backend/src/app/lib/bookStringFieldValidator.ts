@@ -1,5 +1,5 @@
-const UNTRIMMED_BOOK_STRING_FIELD_MAX_SIZE = 650;
-const BOOK_STRING_FIELD_MAX_SIZE = 500;
+const UNTRIMMED_BOOK_STRING_FIELD_MAX_SIZE = 200;
+const BOOK_STRING_FIELD_MAX_SIZE = 150;
 
 export function validator(field: string): boolean {
   if (field.length > UNTRIMMED_BOOK_STRING_FIELD_MAX_SIZE) {
