@@ -16,7 +16,7 @@ export function tryToFormatEmail(inputEmail: string): string {
     throw new Error(message);
   }
 
-  const formattedEmail = inputEmail.toLowerCase().trim();
+  const formattedEmail = inputEmail.trim().toLowerCase();
   return formattedEmail;
 }
 
