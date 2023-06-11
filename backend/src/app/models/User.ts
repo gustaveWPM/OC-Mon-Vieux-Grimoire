@@ -22,6 +22,5 @@ const userSchema: Schema = new Schema({
 });
 
 userSchema.plugin(uniqueValidator);
-userSchema.index({ email: 'text' });
-
+userSchema.index({ email: 1 }, { unique: true });
 export default model<UserDocument>('User', userSchema);
