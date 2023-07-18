@@ -1,18 +1,20 @@
 # Mon vieux Grimoire
 
+## Notes
 
-## Comment lancer le projet (partie frontend) ? 
+The Front-End of this project is FORKED from this repository: [https://github.com/OpenClassrooms-Student-Center/P7-Dev-Web-livres](https://github.com/OpenClassrooms-Student-Center/P7-Dev-Web-livres) (I'm not a dirty JS aficionado).
 
-### Avec npm
+### How to launch the project (frontend part)? 
 
-Faites la commande `npm install` pour installer les dépendances puis `npm start` pour lancer le projet. 
+#### Using npm 
 
-Le projet a été testé sur node 19. 
+Run the command `npm install` to install the dependencies, and then `npm start` to launch the project.
+The project has been tested on Node 19.
 
-## Comment lancer le projet (partie backend) ? 
+### How to launch the project (backend part)? 
 
-[Référez-vous au fichier README correspondant : `./backend/README.md`](./backend/README.md)  
-- [Accéder directement au dossier `./backend`](./backend)
+[Refer to the corresponding README file: `./backend/README.md`](./backend/README.md)  
+- [Access the `./backend` folder](./backend)
 
 ---
 
