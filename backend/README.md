@@ -1,11 +1,11 @@
 # Mon vieux Grimoire
 
 
-## Comment lancer le backend ? 
+## How to launch the project (backend part)? 
 
-**⚠️ Assurez-vous de bien être dans le dossier 'backend' du projet avant de poursuivre !**  
+**⚠️ Make sure you are in the 'backend' folder of the project before proceeding!**  
 
-> ℹ️ Pour ce faire, vous pouvez utiliser la commande `cd backend` dans le cas où votre terminal aurait été ouvert depuis le dossier racine de ce projet, ou en ouvrant directement un terminal depuis le dossier `backend`.
+> ℹ️ To do this, you can use the command `cd backend` if your terminal was opened from the root folder of this project, or by directly opening a terminal from the `backend` folder.  
 
 ### ⚙️ Developer mode
 
