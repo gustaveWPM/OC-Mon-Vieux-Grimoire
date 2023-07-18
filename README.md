@@ -8,7 +8,7 @@ The Front-End of this project is FORKED from this repository: [https://github.co
 
 #### Using npm 
 
-Run the command `npm install` to install the dependencies, and then `npm start` to launch the project.
+Run the command `npm install` to install the dependencies, and then `npm start` to launch the project.  
 The project has been tested on Node 19.
 
 ### How to launch the project (backend part)? 
