@@ -58,7 +58,7 @@ function appBinder(app: Express) {
   pluginControllers(app);
 }
 
-export async function getApp(): Promise<Express> {
+export async function tryGetApp(): Promise<Express> {
   try {
     await tryToConnectToMongoDB();
     const app = express();
@@ -69,4 +69,4 @@ export async function getApp(): Promise<Express> {
   }
 }
 
-export default getApp;
+export default tryGetApp;
