@@ -9,6 +9,7 @@ import errorToObj from '../lib/errorToObj';
 const QUALITY_RATIO: number = 90;
 const MAX_WIDTH_PX: number = 750;
 const MAX_HEIGHT_PX: number = 900;
+const SUFFIX = '-sharp.webp';
 
 export async function compressMiddleware(req: Request, res: Response, next: NextFunction) {
   if (!req.file || !req.file.filename) {
@@ -19,7 +20,7 @@ export async function compressMiddleware(req: Request, res: Response, next: Next
   let { filename } = file;
 
   const lastDotIndex = filename.lastIndexOf('.');
-  filename = filename.slice(0, lastDotIndex) + '-sharp.webp';
+  filename = lastDotIndex !== -1 ? filename.slice(0, lastDotIndex) + SUFFIX : filename + SUFFIX;
 
   try {
     await sharp(file.path)
